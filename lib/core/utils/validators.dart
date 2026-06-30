@@ -1,16 +1,8 @@
-// lib/core/utils/validators.dart
-// SRP: Única responsabilidad — validar inputs de formularios.
-// Funciones puras, sin estado, sin dependencias de Flutter/UI.
-// Reutilizables en cualquier formulario del proyecto.
-
 abstract final class AppValidators {
-  //Regex RFC 5322 simplificado — cubre 99.9% de emails reales
   static final RegExp _emailRegex = RegExp(
     r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$',
   );
-
-  /// Valida formato de correo electrónico.
-  /// Retorna `null` si es válido, mensaje de error si no.
+  // Retorna `null` si es válido, mensaje de error si no.
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'El correo es obligatorio';
@@ -20,9 +12,7 @@ abstract final class AppValidators {
     }
     return null;
   }
-
-  /// Valida contraseña con longitud mínima configurable.
-  /// Por defecto: 8 caracteres (OWASP mínimo recomendado).
+  // Por defecto: 8 caracteres (OWASP mínimo recomendado).
   static String? password(String? value, {int minLength = 8}) {
     if (value == null || value.isEmpty) {
       return 'La contraseña es obligatoria';
@@ -33,7 +23,7 @@ abstract final class AppValidators {
     return null;
   }
 
-  /// Valida que un campo no esté vacío.
+  //Valida que un campo no esté vacío.
   static String? required(String? value, {String fieldName = 'Este campo'}) {
     if (value == null || value.trim().isEmpty) {
       return '$fieldName es obligatorio';

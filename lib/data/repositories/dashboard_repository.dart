@@ -1,8 +1,3 @@
-// lib/data/repositories/dashboard_repository.dart
-// Implementación HTTP de IDashboardRepository.
-// Incluye un mock rápido activable con USE_MOCK = true
-// mientras el backend termina el endpoint.
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -46,7 +41,7 @@ class DashboardRepository implements IDashboardRepository {
     }
   }
 
-  // ── Parseo ────────────────────────────────────────────────────────────────
+  //Parseo
   DashboardSummary _handleResponse(http.Response response) {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     switch (response.statusCode) {
@@ -65,7 +60,7 @@ class DashboardRepository implements IDashboardRepository {
     }
   }
 
-  // ── Mock ──────────────────────────────────────────────────────────────────
+  //Mock
   // Simula latencia de red real para que la UI de carga funcione en pruebas.
   // Elimina (o pon _useMock = false) cuando el backend esté listo.
   Future<DashboardSummary> _mockSummary() async {

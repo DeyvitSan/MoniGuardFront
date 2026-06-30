@@ -7,6 +7,7 @@ import 'domain/interfaces/i_local_storage_service.dart';
 import 'presentation/onboarding/screens/onboarding_screen.dart';
 import 'presentation/login/screens/login_screen.dart';
 import 'presentation/register/screens/register_screen.dart';
+import 'presentation/home/screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,12 +51,12 @@ class MoniGuardApp extends StatelessWidget {
   );
 
   Widget _loginScreen() => LoginScreen(
-    onLoginSuccess: (ctx) => _pushReplacement(ctx, const _PlaceholderHome()),
+    onLoginSuccess: (ctx) => _pushReplacement(ctx, const HomeScreen()),
     onGoToRegister: (ctx) => _pushReplacement(ctx, _registerScreen()),
   );
 
   Widget _registerScreen() => RegisterScreen(
-    onRegisterSuccess: (ctx) => _pushReplacement(ctx, const _PlaceholderHome()),
+    onRegisterSuccess: (ctx) => _pushReplacement(ctx, const HomeScreen()),
     onGoToLogin: (ctx) => _pushReplacement(ctx, _loginScreen(), fade: true),
   );
 
@@ -80,32 +81,6 @@ class MoniGuardApp extends StatelessWidget {
           child: child,
         ),
         transitionDuration: const Duration(milliseconds: 380),
-      ),
-    );
-  }
-}
-
-class _PlaceholderHome extends StatelessWidget {
-  const _PlaceholderHome();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('MoniGuard')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.eco_rounded, size: 64, color: cs.secondary),
-            const SizedBox(height: 24),
-            Text('¡Bienvenido!', style: tt.headlineMedium),
-            const SizedBox(height: 8),
-            Text('Dashboard en construcción',
-                style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-          ],
-        ),
       ),
     );
   }

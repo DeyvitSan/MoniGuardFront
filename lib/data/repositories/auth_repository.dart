@@ -1,8 +1,3 @@
-// lib/data/repositories/auth_repository.dart
-//
-// Implementación HTTP de IAuthRepository — v2 (agrega register).
-// Solo cambia este archivo cuando cambie la API. Nada de presentación aquí.
-
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -16,7 +11,7 @@ class AuthRepository implements IAuthRepository {
 
   AuthRepository({http.Client? client}) : _client = client ?? http.Client();
 
-  // ── Sign In ───────────────────────────────────────────────────────────────
+  //Sign In
   @override
   Future<AuthResponse> signIn({
     required String email,
@@ -28,7 +23,7 @@ class AuthRepository implements IAuthRepository {
     );
   }
 
-  // ── Register ──────────────────────────────────────────────────────────────
+  //Register
   @override
   Future<AuthResponse> register({
     required String nombre,
@@ -41,7 +36,7 @@ class AuthRepository implements IAuthRepository {
     );
   }
 
-  // ── Helper compartido ─────────────────────────────────────────────────────
+  //Helper compartido
   Future<AuthResponse> _post({
     required String url,
     required Map<String, String> body,
@@ -71,7 +66,7 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
-  // ── Parseo de respuesta ───────────────────────────────────────────────────
+  //Parseo de respuesta
   AuthResponse _handleResponse(http.Response response) {
     final Map<String, dynamic> body =
     jsonDecode(response.body) as Map<String, dynamic>;

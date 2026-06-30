@@ -1,4 +1,3 @@
-// lib/presentation/home/home_controller.dart
 // Maneja dos responsabilidades mínimas del Home:
 //   1. Índice activo del BottomNavigationBar
 //   2. Carga y estado de los datos del dashboard
@@ -36,7 +35,7 @@ class HomeController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ── Carga de datos ────────────────────────────────────────────────────────
+  //Carga de datos
   // accessToken: en la siguiente iteración lo sacamos de flutter_secure_storage.
   // Por ahora se pasa desde la pantalla (viene del AuthResponse del login).
   Future<void> loadSummary({String accessToken = ''}) async {
@@ -58,7 +57,7 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  // ── Refresh ───────────────────────────────────────────────────────────────
+  // Refresh
   Future<void> refresh({String accessToken = ''}) =>
       loadSummary(accessToken: accessToken);
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-
 import '../../../domain/interfaces/i_auth_repository.dart';
 import '../../../domain/models/auth_response.dart';
 
