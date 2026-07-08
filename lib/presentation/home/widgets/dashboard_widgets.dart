@@ -1,4 +1,3 @@
-// lib/presentation/home/widgets/dashboard_widgets.dart
 // Widgets atómicos del dashboard — todos Stateless, datos por constructor.
 // SRP: cada widget sabe cómo renderizar UN concepto.
 
@@ -6,9 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/models/dashboard_summary.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
 // HEADER DE BIENVENIDA
-// ─────────────────────────────────────────────────────────────────────────────
 class DashboardHeader extends StatelessWidget {
   final String nombreParcela;
   final String ubicacion;
@@ -169,9 +166,7 @@ class ClimaIndicatorCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // CARD DE RIESGO DE MONILIASIS — el componente más importante del dashboard
-// ─────────────────────────────────────────────────────────────────────────────
 class RiesgoMoniliasisCard extends StatelessWidget {
   final RiesgoData riesgo;
 

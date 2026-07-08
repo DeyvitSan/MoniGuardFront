@@ -1,37 +1,33 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../domain/interfaces/i_auth_repository.dart';
-import '../../../domain/models/auth_response.dart';
+import '../../../../core/session/session_service.dart';
+import '../../domain/auth_repository.dart';
+import '../../domain/entities/auth_response.dart';
 
 enum LoginStatus { idle, loading, success, failure }
 
-class LoginController extends ChangeNotifier {
-  //DIP: depende de la abstracción, no de AuthRepository concreto
-  final IAuthRepository _authRepository;
+class LoginProvider extends ChangeNotifier {
+  final AuthRepository _authRepository;
 
-  LoginController({required IAuthRepository authRepository})
+  LoginProvider({required AuthRepository authRepository})
       : _authRepository = authRepository;
 
-  //Estado
   LoginStatus  _status          = LoginStatus.idle;
   String?      _errorMessage;
   bool         _passwordVisible = false;
-  AuthResponse? _authResponse;   // guarda tokens para pasarlos al storage
+  AuthResponse? _authResponse;
 
-  //Getters públicos
   LoginStatus   get status          => _status;
   String?       get errorMessage    => _errorMessage;
   bool          get passwordVisible => _passwordVisible;
   bool          get isLoading       => _status == LoginStatus.loading;
   AuthResponse? get authResponse    => _authResponse;
 
-  //Toggle visibilidad contraseña
   void togglePasswordVisibility() {
     _passwordVisible = !_passwordVisible;
     notifyListeners();
   }
 
-  //Autenticación real
   Future<void> signIn({
     required String email,
     required String password,
@@ -43,16 +39,16 @@ class LoginController extends ChangeNotifier {
         email:    email,
         password: password,
       );
+
+      await SessionService().saveToken(_authResponse!.accessToken);
       _status       = LoginStatus.success;
       _errorMessage = null;
 
     } on AuthException catch (e) {
-      //Error tipado del repositorio — mensaje ya es amigable
       _status       = LoginStatus.failure;
       _errorMessage = e.message;
 
     } catch (_) {
-      //Cualquier error inesperado — nunca exponemos detalles internos
       _status       = LoginStatus.failure;
       _errorMessage = 'Ocurrió un error inesperado. Intenta más tarde';
 
@@ -61,7 +57,6 @@ class LoginController extends ChangeNotifier {
     }
   }
 
-  //Reset
   void reset() {
     _status          = LoginStatus.idle;
     _errorMessage    = null;

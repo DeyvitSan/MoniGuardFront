@@ -1,5 +1,3 @@
-// Material 3 | Urbanist + Playfair Display | StadiumBorder-first
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 

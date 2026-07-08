@@ -1,64 +1,89 @@
+// features/auth/presentation/pages/login_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
+<<<<<<< HEAD:lib/presentation/login/screens/login_screen.dart
 import '../../../core/utils/validators.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/local_storage_service.dart';
 import '../controllers/login_controller.dart';
+=======
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/utils/validators.dart';
+import '../provider/login_provider.dart';
+>>>>>>> 31d85f8b2067cfa743e6eaf61a15f47ef31f13c8:lib/features/auth/presentation/pages/login_page.dart
 import '../widgets/moniguard_wordmark.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   final void Function(BuildContext context) onLoginSuccess;
   final void Function(BuildContext context) onGoToRegister;
 
-  const LoginScreen({
+  const LoginPage({
     super.key,
     required this.onLoginSuccess,
     required this.onGoToRegister,
   });
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<LoginProvider>(
+      create: (_) => getIt<LoginProvider>(),
+      child: _LoginView(
+        onLoginSuccess: onLoginSuccess,
+        onGoToRegister: onGoToRegister,
+      ),
+    );
+  }
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  //Estado local mínimo: form key + controllers de texto
-  final _formKey        = GlobalKey<FormState>();
-  final _emailCtrl      = TextEditingController();
-  final _passwordCtrl   = TextEditingController();
-  final _loginCtrl      = LoginController(authRepository: AuthRepository());   // instancia local — swapeable por Provider/get_it
+class _LoginView extends StatefulWidget {
+  final void Function(BuildContext context) onLoginSuccess;
+  final void Function(BuildContext context) onGoToRegister;
+
+  const _LoginView({
+    required this.onLoginSuccess,
+    required this.onGoToRegister,
+  });
+
+  @override
+  State<_LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<_LoginView> {
+  final _formKey      = GlobalKey<FormState>();
+  final _emailCtrl    = TextEditingController();
+  final _passwordCtrl = TextEditingController();
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _loginCtrl.dispose();
+    // Ya NO se llama dispose() del provider — ChangeNotifierProvider lo hace solo.
     super.dispose();
   }
 
-  //Submit
-  Future<void> _submit() async {
-    //Cierra el teclado antes de proceder
+  Future<void> _submit(LoginProvider ctrl) async {
     FocusScope.of(context).unfocus();
 
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    await _loginCtrl.signIn(
+    await ctrl.signIn(
       email: _emailCtrl.text.trim(),
       password: _passwordCtrl.text,
     );
 
     if (!mounted) return;
 
-    if (_loginCtrl.status == LoginStatus.success) {
+    if (ctrl.status == LoginStatus.success) {
       HapticFeedback.mediumImpact();
       // Store the logged user's email for re-authentication needs
       final storage = LocalStorageService();
       await storage.setUserEmail(email: _emailCtrl.text.trim());
       widget.onLoginSuccess(context);
-    } else if (_loginCtrl.status == LoginStatus.failure) {
+    } else if (ctrl.status == LoginStatus.failure) {
       HapticFeedback.heavyImpact();
-      _showErrorSnackbar(_loginCtrl.errorMessage ?? 'Error desconocido');
+      _showErrorSnackbar(ctrl.errorMessage ?? 'Error desconocido');
     }
   }
 
@@ -84,7 +109,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
   }
 
-  //Build
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -92,7 +116,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final tt   = Theme.of(context).textTheme;
 
     return Scaffold(
-      //SafeArea para notch / barra de sistema
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -102,23 +125,22 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                //Header: Wordmark + subtítulo
                 _Header(textTheme: tt, colorScheme: cs),
                 const SizedBox(height: 40),
 
-                //Card del formulario
-                _LoginCard(
-                  formKey:      _formKey,
-                  emailCtrl:    _emailCtrl,
-                  passwordCtrl: _passwordCtrl,
-                  controller:   _loginCtrl,
-                  onSubmit:     _submit,
-                  textTheme:    tt,
-                  colorScheme:  cs,
+                Consumer<LoginProvider>(
+                  builder: (context, ctrl, _) => _LoginCard(
+                    formKey:      _formKey,
+                    emailCtrl:    _emailCtrl,
+                    passwordCtrl: _passwordCtrl,
+                    controller:   ctrl,
+                    onSubmit:     () => _submit(ctrl),
+                    textTheme:    tt,
+                    colorScheme:  cs,
+                  ),
                 ),
                 const SizedBox(height: 24),
 
-                //Pie: "¿Olvidaste tu contraseña?" + Ir a Registro
                 _ForgotPassword(colorScheme: cs, textTheme: tt),
                 _GoToRegisterButton(
                   colorScheme: cs,
@@ -134,7 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// WIDGETS PRIVADOS — SRP: cada uno tiene UNA responsabilidad visual
 class _Header extends StatelessWidget {
   final TextTheme textTheme;
   final ColorScheme colorScheme;
@@ -145,7 +166,6 @@ class _Header extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        //Ícono de hoja — marca visual sin asset externo
         Container(
           width: 72,
           height: 72,
@@ -175,12 +195,11 @@ class _Header extends StatelessWidget {
   }
 }
 
-///Card contenedora del formulario de login
 class _LoginCard extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController emailCtrl;
   final TextEditingController passwordCtrl;
-  final LoginController controller;
+  final LoginProvider controller;
   final VoidCallback onSubmit;
   final TextTheme textTheme;
   final ColorScheme colorScheme;
@@ -197,69 +216,57 @@ class _LoginCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //AnimatedBuilder escucha LoginController sin depender de Provider
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        return Card(
-          //Card hereda automáticamente CardTheme de app_theme.dart
-          child: Padding(
-            padding: const EdgeInsets.all(28),
-            child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  //Título de sección
-                  Text(
-                    'Iniciar sesión',
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Accede a tu cuenta de productor',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  //Campo Email
-                  _EmailField(
-                    controller: emailCtrl,
-                    enabled: !controller.isLoading,
-                  ),
-                  const SizedBox(height: 16),
-
-                  //Campo Contraseña
-                  _PasswordField(
-                    controller: passwordCtrl,
-                    obscure: !controller.passwordVisible,
-                    enabled: !controller.isLoading,
-                    onToggleVisibility: controller.togglePasswordVisibility,
-                  ),
-                  const SizedBox(height: 32),
-
-                  //Botón de submit
-                  _SubmitButton(
-                    isLoading: controller.isLoading,
-                    onPressed: onSubmit,
-                    colorScheme: colorScheme,
-                    textTheme: textTheme,
-                  ),
-                ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Form(
+          key: formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Iniciar sesión',
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
+              const SizedBox(height: 6),
+              Text(
+                'Accede a tu cuenta de productor',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 28),
+
+              _EmailField(
+                controller: emailCtrl,
+                enabled: !controller.isLoading,
+              ),
+              const SizedBox(height: 16),
+
+              _PasswordField(
+                controller: passwordCtrl,
+                obscure: !controller.passwordVisible,
+                enabled: !controller.isLoading,
+                onToggleVisibility: controller.togglePasswordVisibility,
+              ),
+              const SizedBox(height: 32),
+
+              _SubmitButton(
+                isLoading: controller.isLoading,
+                onPressed: onSubmit,
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-///Campo de correo electrónico con validación de formato
 class _EmailField extends StatelessWidget {
   final TextEditingController controller;
   final bool enabled;
@@ -268,7 +275,6 @@ class _EmailField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //Hereda InputDecorationTheme completo de app_theme.dart
     return TextFormField(
       controller: controller,
       enabled: enabled,
@@ -276,7 +282,6 @@ class _EmailField extends StatelessWidget {
       textInputAction: TextInputAction.next,
       autocorrect: false,
       enableSuggestions: false,
-      //Seguridad: no permite autocompletar credenciales de terceros
       autofillHints: const [AutofillHints.username, AutofillHints.email],
       validator: AppValidators.email,
       decoration: const InputDecoration(
@@ -288,7 +293,6 @@ class _EmailField extends StatelessWidget {
   }
 }
 
-///Campo de contraseña con toggle de visibilidad seguro
 class _PasswordField extends StatelessWidget {
   final TextEditingController controller;
   final bool obscure;
@@ -309,17 +313,14 @@ class _PasswordField extends StatelessWidget {
       enabled: enabled,
       obscureText: obscure,
       textInputAction: TextInputAction.done,
-      //Seguridad: deshabilita sugerencias y corrección en campo de password
       autocorrect: false,
       enableSuggestions: false,
       autofillHints: const [AutofillHints.password],
-      //Validación: mínimo 8 caracteres (OWASP)
       validator: AppValidators.password,
       decoration: InputDecoration(
         labelText: 'Contraseña',
         hintText: '••••••••',
         prefixIcon: const Icon(Icons.lock_outline_rounded),
-        //Toggle de visibilidad — accesible con semanticsLabel
         suffixIcon: IconButton(
           icon: Icon(
             obscure
@@ -334,7 +335,6 @@ class _PasswordField extends StatelessWidget {
   }
 }
 
-///Botón de submit con estado de carga integrado
 class _SubmitButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onPressed;
@@ -353,8 +353,6 @@ class _SubmitButton extends StatelessWidget {
     return SizedBox(
       height: 52,
       child: ElevatedButton(
-        //Hereda ElevatedButtonTheme de app_theme.dart
-        //null desactiva el botón automáticamente durante carga
         onPressed: isLoading ? null : onPressed,
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
@@ -382,7 +380,6 @@ class _SubmitButton extends StatelessWidget {
   }
 }
 
-///Enlace de ¿Olvidaste tu contraseña?
 class _ForgotPassword extends StatelessWidget {
   final ColorScheme colorScheme;
   final TextTheme textTheme;
@@ -393,7 +390,6 @@ class _ForgotPassword extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: () {
-        //TODO: navegar a RecoverPasswordScreen cuando la implementes
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Recuperación de contraseña próximamente'),
@@ -416,7 +412,6 @@ class _ForgotPassword extends StatelessWidget {
   }
 }
 
-//Botón ¿No tienes cuenta? Regístrate navega a RegisterScreen
 class _GoToRegisterButton extends StatelessWidget {
   final ColorScheme colorScheme;
   final TextTheme   textTheme;

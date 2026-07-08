@@ -1,6 +1,3 @@
-// Implementación concreta — depende de SharedPreferences.
-// La capa de presentación nunca importa este archivo directamente.
-
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/interfaces/i_local_storage_service.dart';
 

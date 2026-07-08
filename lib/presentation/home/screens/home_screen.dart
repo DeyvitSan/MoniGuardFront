@@ -1,4 +1,3 @@
-// lib/presentation/home/screens/home_screen.dart
 // Pantalla principal de MoniGuard — Dashboard.
 // Presentación pura: delega toda la lógica al HomeController.
 // BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil.
@@ -12,10 +11,9 @@ import '../../../data/repositories/dashboard_repository.dart';
 import '../controller/home_controller.dart';
 import '../../profile/screens/profile_screen.dart';
 import '../widgets/dashboard_widgets.dart';
-import '../../bitacora/widgets/bitacora_tab.dart';
 
 class HomeScreen extends StatefulWidget {
-  /// Token de sesión — en la siguiente iteración vendrá de flutter_secure_storage.
+  //Token de sesión — en la siguiente iteración vendrá de flutter_secure_storage.
   final String accessToken;
 
   const HomeScreen({super.key, this.accessToken = ''});
@@ -49,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return '$a$b'.toUpperCase();
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  // ── Build
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -93,15 +91,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           backgroundColor: cs.surface,
 
-          // ── AppBar ────────────────────────────────────────────────────────
+          // ── AppBar
           appBar: _buildAppBar(context, cs),
 
-          // ── Cuerpo según tab activo ────────────────────────────────────────
+          // ── Cuerpo según tab activo
           body: IndexedStack(
             index: _ctrl.tabIndex,
             children: [
               _DashboardTab(ctrl: _ctrl),
-              const BitacoraTab(),
+              const _PlaceholderTab(
+                icon: Icons.edit_note_rounded,
+                label: 'Bitácoras',
+                subtitle: 'Módulo en construcción',
+              ),
               const _PlaceholderTab(
                 icon: Icons.person_outline_rounded,
                 label: 'Perfil',
@@ -110,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
 
-          // ── BottomNavigationBar ───────────────────────────────────────────
+          // ── BottomNavigationBar
           bottomNavigationBar: NavigationBar(
             selectedIndex: _ctrl.tabIndex,
             onDestinationSelected: (i) {
@@ -181,9 +183,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // TAB 0 — Dashboard principal
-// ─────────────────────────────────────────────────────────────────────────────
+
 class _DashboardTab extends StatelessWidget {
   final HomeController ctrl;
   const _DashboardTab({required this.ctrl});
@@ -199,7 +200,7 @@ class _DashboardTab extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: switch (ctrl.status) {
-        // ── Cargando ────────────────────────────────────────────────────
+        // ── Cargando
           DashboardStatus.idle || DashboardStatus.loading =>
           const DashboardSkeleton(),
 

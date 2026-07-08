@@ -1,24 +1,22 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../domain/interfaces/i_auth_repository.dart';
-import '../../../domain/models/auth_response.dart';
+import '../../domain/auth_repository.dart';
+import '../../domain/entities/auth_response.dart';
 
 enum RegisterStatus { idle, loading, success, failure }
 
-class RegisterController extends ChangeNotifier {
-  final IAuthRepository _authRepository;
+class RegisterProvider extends ChangeNotifier {
+  final AuthRepository _authRepository;
 
-  RegisterController({required IAuthRepository authRepository})
+  RegisterProvider({required AuthRepository authRepository})
       : _authRepository = authRepository;
 
-  //Estado
   RegisterStatus _status         = RegisterStatus.idle;
   String?        _errorMessage;
   bool           _passwordVisible = false;
   bool           _confirmVisible  = false;
   AuthResponse?  _authResponse;
 
-  //Getters
   RegisterStatus get status          => _status;
   String?        get errorMessage    => _errorMessage;
   bool           get passwordVisible => _passwordVisible;
@@ -26,7 +24,6 @@ class RegisterController extends ChangeNotifier {
   bool           get isLoading       => _status == RegisterStatus.loading;
   AuthResponse?  get authResponse    => _authResponse;
 
-  //Toggles de visibilidad
   void togglePasswordVisibility() {
     _passwordVisible = !_passwordVisible;
     notifyListeners();
@@ -37,7 +34,8 @@ class RegisterController extends ChangeNotifier {
     notifyListeners();
   }
 
-  //Registro
+  // Nota: NO guarda token en SessionService a propósito — el registro
+  // no auto-loguea, redirige a login para que el usuario entre manualmente.
   Future<void> register({
     required String nombre,
     required String email,
@@ -67,7 +65,6 @@ class RegisterController extends ChangeNotifier {
     }
   }
 
-  //Reset
   void reset() {
     _status          = RegisterStatus.idle;
     _errorMessage    = null;
