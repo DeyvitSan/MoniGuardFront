@@ -6,8 +6,8 @@ import 'core/theme/app_theme.dart';
 import 'data/repositories/local_storage_service.dart';
 import 'domain/interfaces/i_local_storage_service.dart';
 import 'presentation/onboarding/screens/onboarding_screen.dart';
-import 'presentation/login/screens/login_screen.dart';
-import 'presentation/register/screens/register_screen.dart';
+import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/register_page.dart';
 import 'presentation/home/screens/home_screen.dart';
 
 Future<void> main() async {
@@ -44,23 +44,23 @@ class MoniGuardApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: hasSeenOnboarding ? _loginScreen() : _onboardingScreen(),
+      home: hasSeenOnboarding ? _loginPage() : _onboardingScreen(),
     );
   }
 
   Widget _onboardingScreen() => OnboardingScreen(
     storageService: storageService,
-    onCompleted: (ctx) => _pushReplacement(ctx, _loginScreen(), fade: true),
+    onCompleted: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
   );
 
-  Widget _loginScreen() => LoginScreen(
+  Widget _loginPage() => LoginPage(
     onLoginSuccess: (ctx) => _pushReplacement(ctx, const HomeScreen()),
-    onGoToRegister: (ctx) => _pushReplacement(ctx, _registerScreen()),
+    onGoToRegister: (ctx) => _pushReplacement(ctx, _registerPage()),
   );
 
-  Widget _registerScreen() => RegisterScreen(
-    onRegisterSuccess: (ctx) => _pushReplacement(ctx, _loginScreen(), fade: true),
-    onGoToLogin: (ctx) => _pushReplacement(ctx, _loginScreen(), fade: true),
+  Widget _registerPage() => RegisterPage(
+    onRegisterSuccess: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
+    onGoToLogin: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
   );
 
   void _pushReplacement(BuildContext ctx, Widget page, {bool fade = false}) {

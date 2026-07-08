@@ -1,14 +1,13 @@
-import '../models/auth_response.dart';
+import 'entities/auth_response.dart';
 
-abstract interface class IAuthRepository {
-  //Autentica un usuario existente.
+abstract interface class AuthRepository {
+  // Autentica un usuario existente.
   Future<AuthResponse> signIn({
     required String email,
     required String password,
   });
 
   // Registra un nuevo usuario y retorna sesión activa.
-  // El backend crea la cuenta Y devuelve tokens — el usuario entra directo.
   Future<AuthResponse> register({
     required String nombre,
     required String email,

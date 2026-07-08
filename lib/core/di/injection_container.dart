@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import '../../features/auth/di/injection_auth.dart';
 import '../../features/bitacora/di/injection_bitacora.dart';
 
 
@@ -13,6 +14,6 @@ Future<void> initDependencies() async {
   getIt.registerLazySingleton<ConnectivityService>(() => ConnectivityService());
 
   // ── Cada feature registra las suyas aquí, según se vayan migrando:
-  // initAuthDependencies(getIt);
+   initAuthDependencies(getIt);
    initBitacoraDependencies(getIt);
 }
