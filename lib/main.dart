@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'core/di/injection_container.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/local_storage_service.dart';
 import 'domain/interfaces/i_local_storage_service.dart';
@@ -13,6 +14,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+
+  await initDependencies();
 
   final ILocalStorageService storageService = LocalStorageService();
   final bool hasSeenOnboarding = await storageService.getHasSeenOnboarding();

@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../core/constants/destinos_cacao.dart';
-import '../../../domain/interfaces/i_bitacora_repository.dart';
-import '../../../domain/models/bitacora.dart';
+import '../../../../core/constants/destinos_cacao.dart';
+import '../../domain/bitacora_repository.dart';
+import '../../domain/entities/bitacora.dart';
+import '../../domain/entities/clima_previo.dart';
 
 enum ClimaStatus { idle, loading, success, failure }
 
@@ -11,10 +12,10 @@ enum GuardadoStatus { idle, guardando, guardado, failure }
 // 'unauthorized' es un estado propio: NO es lo mismo que 'failure' de red.
 enum SyncStatus { idle, syncing, success, partial, failure, unauthorized }
 
-class BitacoraController extends ChangeNotifier {
-  final IBitacoraRepository _repo;
+class BitacoraProvider extends ChangeNotifier {
+  final BitacoraRepository _repo;
 
-  BitacoraController({required IBitacoraRepository repository})
+  BitacoraProvider({required BitacoraRepository repository})
       : _repo = repository;
 
   // ---- Destino seleccionado ----
@@ -115,10 +116,8 @@ class BitacoraController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Sincronización explícita (botón). Ya NO recibe accessToken:
-  /// el repositorio lo lee de SessionService.
   Future<void> sincronizar() async {
-    if (_syncStatus == SyncStatus.syncing) return; // evita solapamiento
+    if (_syncStatus == SyncStatus.syncing) return;
     _syncStatus = SyncStatus.syncing;
     notifyListeners();
 
@@ -145,7 +144,6 @@ class BitacoraController extends ChangeNotifier {
           break;
       }
     } on UnauthorizedException catch (e) {
-      // Causa REAL visible: sesión inválida, no "sin conexión".
       _syncStatus = SyncStatus.unauthorized;
       _syncMessage = e.message;
     } catch (_) {
@@ -157,8 +155,6 @@ class BitacoraController extends ChangeNotifier {
     }
   }
 
-  /// Disparo automático silencioso: usado al abrir la pantalla, al recuperar
-  /// conexión y al volver del background. No hace ruido si no hay pendientes.
   Future<void> syncIfPending() async {
     await cargarPendientes();
     if (_pendientes.isEmpty) return;

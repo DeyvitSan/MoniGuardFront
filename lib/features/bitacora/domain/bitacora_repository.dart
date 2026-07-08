@@ -1,4 +1,5 @@
-import '../models/bitacora.dart';
+import 'entities/bitacora.dart';
+import 'entities/clima_previo.dart';
 
 /// Resultado detallado de una sincronización, para que la UI pueda distinguir
 /// entre "todo bien", "parcial", "falló la red" y "no autorizado" — en vez de
@@ -22,7 +23,7 @@ class SyncResult {
   });
 }
 
-abstract interface class IBitacoraRepository {
+abstract interface class BitacoraRepository {
   /// Consulta clima actual para un destino (requiere internet).
   Future<ClimaPrevio> getClimaDestino({
     required double lat,
