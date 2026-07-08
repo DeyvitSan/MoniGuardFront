@@ -3,19 +3,20 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-import '../../core/constants/api_constants.dart';
-import '../../core/session/session_service.dart';
-import '../../domain/interfaces/i_bitacora_repository.dart';
-import '../../domain/models/bitacora.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../../core/session/session_service.dart';
+import '../../domain/bitacora_repository.dart';
+import '../../domain/entities/bitacora.dart';
+import '../../domain/entities/clima_previo.dart';
 
-class BitacoraRepository implements IBitacoraRepository {
+class BitacoraRepositoryImpl implements BitacoraRepository {
   final http.Client _client;
   final FlutterSecureStorage _secureStorage;
   final SessionService _session;
 
   static const _storageKey = 'bitacoras_pendientes';
 
-  BitacoraRepository({
+  BitacoraRepositoryImpl({
     http.Client? client,
     FlutterSecureStorage? secureStorage,
     SessionService? session,
@@ -68,8 +69,6 @@ class BitacoraRepository implements IBitacoraRepository {
 
   @override
   Future<SyncResult> sincronizar() async {
-    // El token se lee de la única fuente de verdad. Si no hay, fallamos
-    // EXPLÍCITO en vez de mandar "Bearer " vacío y provocar un 401 silencioso.
     final token = await _session.readToken();
     if (token == null || token.trim().isEmpty) {
       throw const UnauthorizedException(
@@ -104,14 +103,11 @@ class BitacoraRepository implements IBitacoraRepository {
         if (code == 201) {
           subidas++;
         } else if (code == 401 || code == 403) {
-          // Token inválido/expirado: reintentar el resto con el mismo token
-          // fallaría igual. Preservamos TODO lo no subido y abortamos explícito.
           restantes.addAll(pendientes.sublist(i));
           await _secureStorage.write(
               key: _storageKey, value: jsonEncode(restantes));
           throw const UnauthorizedException();
         } else {
-          // 4xx de datos o 5xx del servidor: se conserva y se reintenta luego.
           fallidas++;
           restantes.add(j);
         }
@@ -120,7 +116,7 @@ class BitacoraRepository implements IBitacoraRepository {
         restantes.add(j);
       } on http.ClientException {
         fallidas++;
-        restantes.add(j); // sin internet, se queda para después
+        restantes.add(j);
       }
     }
 
@@ -161,7 +157,6 @@ class BitacoraRepository implements IBitacoraRepository {
     } on TimeoutException {
       throw const BitacoraException('Sin conexión. Mostrando datos guardados');
     } on http.ClientException {
-      // Antes NO se capturaba: sin internet lanzaba excepción no controlada.
       throw const BitacoraException('Sin conexión. Mostrando datos guardados');
     }
   }

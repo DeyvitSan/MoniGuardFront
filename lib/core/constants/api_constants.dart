@@ -1,4 +1,3 @@
-// core/constants/api_constants.dart
 // La URL base se inyecta en tiempo de compilación con --dart-define-from-file.
 // NUNCA hardcodear IPs de hotspot (172.20.10.x): cambian en cada reconexión
 // y no existen en producción. Ver config/dev.json y config/prod.json.

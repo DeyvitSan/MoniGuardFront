@@ -9,7 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/dashboard_repository.dart';
 import '../controller/home_controller.dart';
 import '../widgets/dashboard_widgets.dart';
-import '../../bitacora/screens/bitacora_screen.dart';
+import '../../../features/bitacora/presentation/pages/bitacora_page.dart';
 
 class HomeScreen extends StatefulWidget {
   //Token de sesión — en la siguiente iteración vendrá de flutter_secure_storage.
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
             index: _ctrl.tabIndex,
             children: [
               _DashboardTab(ctrl: _ctrl),
-              BitacoraScreen(
+              BitacoraPage(
                 onSessionExpired: () {
                   Navigator.of(context).pushReplacementNamed('/login');
                 },
