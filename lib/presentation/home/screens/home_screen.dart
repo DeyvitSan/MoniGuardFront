@@ -57,7 +57,11 @@ class _HomeScreenState extends State<HomeScreen> {
             index: _ctrl.tabIndex,
             children: [
               _DashboardTab(ctrl: _ctrl),
-              BitacoraScreen(accessToken: widget.accessToken),
+              BitacoraScreen(
+                onSessionExpired: () {
+                  Navigator.of(context).pushReplacementNamed('/login');
+                },
+              ),
               const _PlaceholderTab(
                 icon: Icons.person_outline_rounded,
                 label: 'Perfil',

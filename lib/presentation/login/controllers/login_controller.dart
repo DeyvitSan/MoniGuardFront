@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 
 import '../../../domain/interfaces/i_auth_repository.dart';
 import '../../../domain/models/auth_response.dart';
+import '../../../core/session/session_service.dart';
+
 
 enum LoginStatus { idle, loading, success, failure }
 
@@ -43,6 +45,8 @@ class LoginController extends ChangeNotifier {
         email:    email,
         password: password,
       );
+
+      await SessionService().saveToken(_authResponse!.accessToken);
       _status       = LoginStatus.success;
       _errorMessage = null;
 

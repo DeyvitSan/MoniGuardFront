@@ -1,33 +1,78 @@
 // Flujo: seleccionar destino → consultar clima → redactar → guardar local → sincronizar.
+// Sincronización automática: al abrir, al recuperar conexión y al volver del background.
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/destinos_cacao.dart';
+import '../../../core/network/connectivity_service.dart';
+import '../../../core/session/session_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/bitacora_repository.dart';
 import '../controller/bitacora_controller.dart';
 
 class BitacoraScreen extends StatefulWidget {
-  final String accessToken;
+  // Ya NO existe accessToken: el token se lee de SessionService.
+  // onSessionExpired permite que quien monte la pantalla redirija al login
+  // sin hardcodear rutas aquí.
+  final VoidCallback? onSessionExpired;
 
-  const BitacoraScreen({super.key, this.accessToken = ''});
+  const BitacoraScreen({super.key, this.onSessionExpired});
 
   @override
   State<BitacoraScreen> createState() => _BitacoraScreenState();
 }
 
-class _BitacoraScreenState extends State<BitacoraScreen> {
+class _BitacoraScreenState extends State<BitacoraScreen>
+    with WidgetsBindingObserver {
   late final BitacoraController _ctrl;
   final _textoCtrl = TextEditingController();
+  final _connectivity = ConnectivityService();
+  StreamSubscription<bool>? _connSub;
+  bool _sessionExpiredHandled = false;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = BitacoraController(repository: BitacoraRepository());
+    WidgetsBinding.instance.addObserver(this);
+
+    _ctrl = BitacoraController(
+      repository: BitacoraRepository(session: SessionService()),
+    );
+    _ctrl.addListener(_onControllerChanged);
+
     _ctrl.cargarPendientes();
+    _ctrl.syncIfPending(); // intento al abrir
+
+    // Disparador 2: al recuperar conexión.
+    _connSub = _connectivity.onConnectionChanged.listen((online) {
+      if (online) _ctrl.syncIfPending();
+    });
+  }
+
+  // Disparador 3: al volver del background (compensa que Android O no entrega
+  // eventos de conectividad en background).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _ctrl.syncIfPending();
+    }
+  }
+
+  void _onControllerChanged() {
+    // Notifica al padre UNA vez cuando la sesión expira, para redirigir a login.
+    if (_ctrl.sesionExpirada && !_sessionExpiredHandled) {
+      _sessionExpiredHandled = true;
+      widget.onSessionExpired?.call();
+    } else if (!_ctrl.sesionExpirada) {
+      _sessionExpiredHandled = false;
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _connSub?.cancel();
+    _ctrl.removeListener(_onControllerChanged);
     _ctrl.dispose();
     _textoCtrl.dispose();
     super.dispose();
@@ -53,6 +98,9 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
               ),
               const SizedBox(height: 20),
 
+              // Banner visible de sesión expirada (antes: 401 silencioso).
+              if (_ctrl.sesionExpirada) _buildAuthErrorBanner(cs),
+
               _buildSelectorDestino(cs),
               const SizedBox(height: 16),
 
@@ -72,7 +120,34 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
     );
   }
 
-  //Selector de destino
+  Widget _buildAuthErrorBanner(ColorScheme cs) {
+    return Card(
+      color: cs.errorContainer,
+      shape: AppShapes.cardShape,
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.lock_person_rounded, color: cs.onErrorContainer),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _ctrl.syncMessage ?? 'Tu sesión expiró. Inicia sesión de nuevo.',
+                style: TextStyle(color: cs.onErrorContainer),
+              ),
+            ),
+            if (widget.onSessionExpired != null)
+              TextButton(
+                onPressed: widget.onSessionExpired,
+                child: const Text('Iniciar sesión'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSelectorDestino(ColorScheme cs) {
     return Card(
       shape: AppShapes.cardShape,
@@ -98,7 +173,6 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
     );
   }
 
-  //Sección de clima
   Widget _buildClimaSection(ColorScheme cs) {
     if (_ctrl.climaStatus == ClimaStatus.idle) {
       return FilledButton.icon(
@@ -117,8 +191,10 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
         color: cs.errorContainer,
         shape: AppShapes.cardShape,
         child: ListTile(
-          leading: Icon(Icons.error_outline_rounded, color: cs.onErrorContainer),
-          title: Text(_ctrl.climaError ?? 'Error', style: TextStyle(color: cs.onErrorContainer)),
+          leading:
+          Icon(Icons.error_outline_rounded, color: cs.onErrorContainer),
+          title: Text(_ctrl.climaError ?? 'Error',
+              style: TextStyle(color: cs.onErrorContainer)),
           trailing: IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _ctrl.consultarClima,
@@ -136,19 +212,24 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _ClimaChip(icon: Icons.thermostat_rounded, label: '${clima.temperatura.toStringAsFixed(1)}°C'),
-            _ClimaChip(icon: Icons.water_drop_outlined, label: '${clima.humedad.toStringAsFixed(0)}%'),
-            _ClimaChip(icon: Icons.umbrella_outlined, label: '${clima.precipitacion.toStringAsFixed(1)}mm'),
+            _ClimaChip(
+                icon: Icons.thermostat_rounded,
+                label: '${clima.temperatura.toStringAsFixed(1)}°C'),
+            _ClimaChip(
+                icon: Icons.water_drop_outlined,
+                label: '${clima.humedad.toStringAsFixed(0)}%'),
+            _ClimaChip(
+                icon: Icons.umbrella_outlined,
+                label: '${clima.precipitacion.toStringAsFixed(1)}mm'),
           ],
         ),
       ),
     );
   }
 
-  //Formulario de texto
   Widget _buildFormularioTexto(ColorScheme cs) {
     final guardando = _ctrl.guardadoStatus == GuardadoStatus.guardando;
-    final guardado  = _ctrl.guardadoStatus == GuardadoStatus.guardado;
+    final guardado = _ctrl.guardadoStatus == GuardadoStatus.guardado;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -158,7 +239,8 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
           maxLines: 5,
           decoration: const InputDecoration(
             labelText: 'Observaciones de campo',
-            hintText: 'Describe el estado de la parcela, frutos, hojas, humedad visible...',
+            hintText:
+            'Describe el estado de la parcela, frutos, hojas, humedad visible...',
             alignLabelWithHint: true,
             border: OutlineInputBorder(),
           ),
@@ -173,17 +255,24 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
               _textoCtrl.clear();
               _ctrl.resetFormulario();
               await _ctrl.cargarPendientes();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Bitácora guardada localmente')),
-              );
+              // Intento de subir de inmediato si hay red.
+              await _ctrl.syncIfPending();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Bitácora guardada localmente')),
+                );
+              }
             }
           },
           icon: guardando
               ? const SizedBox(
-              width: 16, height: 16,
+              width: 16,
+              height: 16,
               child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.lock_outline_rounded),
-          label: Text(guardando ? 'Guardando...' : 'Guardar bitácora (cifrada local)'),
+          label: Text(
+              guardando ? 'Guardando...' : 'Guardar bitácora (cifrada local)'),
         ),
         if (guardado)
           const Padding(
@@ -194,10 +283,22 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
     );
   }
 
-  //Pendientes de sincronizar
   Widget _buildPendientesSection(ColorScheme cs) {
     final pendientes = _ctrl.pendientes;
-    final syncing    = _ctrl.syncStatus == SyncStatus.syncing;
+    final syncing = _ctrl.syncStatus == SyncStatus.syncing;
+
+    // Color del mensaje según el tipo de resultado.
+    Color msgColor() {
+      switch (_ctrl.syncStatus) {
+        case SyncStatus.unauthorized:
+        case SyncStatus.failure:
+          return cs.error;
+        case SyncStatus.partial:
+          return cs.tertiary;
+        default:
+          return cs.onSurfaceVariant;
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,25 +307,27 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text('Pendientes de sincronizar (${pendientes.length})',
-                style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface)),
+                style: TextStyle(
+                    fontWeight: FontWeight.w600, color: cs.onSurface)),
             TextButton.icon(
               onPressed: (pendientes.isEmpty || syncing)
                   ? null
-                  : () => _ctrl.sincronizar(accessToken: widget.accessToken),
+                  : () => _ctrl.sincronizar(),
               icon: syncing
                   ? const SizedBox(
-                  width: 14, height: 14,
+                  width: 14,
+                  height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.sync_rounded, size: 18),
               label: Text(syncing ? 'Sincronizando...' : 'Sincronizar'),
             ),
           ],
         ),
-        if (_ctrl.syncMessage != null)
+        if (_ctrl.syncMessage != null && !_ctrl.sesionExpirada)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(_ctrl.syncMessage!,
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                style: TextStyle(color: msgColor(), fontSize: 12)),
           ),
         if (pendientes.isEmpty)
           Padding(
@@ -238,7 +341,8 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
             child: ListTile(
               leading: const Icon(Icons.lock_clock_outlined),
               title: Text(b.destino),
-              subtitle: Text(b.texto, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(b.texto,
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           )),
       ],
@@ -248,7 +352,7 @@ class _BitacoraScreenState extends State<BitacoraScreen> {
 
 class _ClimaChip extends StatelessWidget {
   final IconData icon;
-  final String   label;
+  final String label;
 
   const _ClimaChip({required this.icon, required this.label});
 
@@ -259,7 +363,9 @@ class _ClimaChip extends StatelessWidget {
       children: [
         Icon(icon, color: cs.onSecondaryContainer),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: cs.onSecondaryContainer, fontWeight: FontWeight.w600)),
+        Text(label,
+            style: TextStyle(
+                color: cs.onSecondaryContainer, fontWeight: FontWeight.w600)),
       ],
     );
   }
