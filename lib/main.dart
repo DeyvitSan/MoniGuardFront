@@ -56,7 +56,7 @@ class MoniGuardApp extends StatelessWidget {
   );
 
   Widget _registerScreen() => RegisterScreen(
-    onRegisterSuccess: (ctx) => _pushReplacement(ctx, const HomeScreen()),
+    onRegisterSuccess: (ctx) => _pushReplacement(ctx, _loginScreen(), fade: true),
     onGoToLogin: (ctx) => _pushReplacement(ctx, _loginScreen(), fade: true),
   );
 
