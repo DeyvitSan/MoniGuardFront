@@ -4,16 +4,18 @@
 //   flutter run   --dart-define-from-file=config/dev.json
 //   flutter build apk --release --dart-define-from-file=config/prod.json
 abstract final class ApiConstants {
-  // 10.0.2.2 = alias del emulador Android hacia el localhost de tu máquina.
-  // Es el default seguro para desarrollo; prod lo sobreescribe por dart-define.
+  // Para celular en la misma red Wi‑Fi, usa la IP de tu PC donde corre el gateway.
+  // Para emulador Android, cambia a http://10.0.2.2:3000/api/v1.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.100.8:3000/api/v1',
+    defaultValue: 'http://172.20.10.3:3000/api/v1',
   );
 
   // Auth
   static const String login = '$baseUrl/auth/login';
   static const String register = '$baseUrl/auth/register';
+  static const String profileMe = '$baseUrl/auth/me';
+  static const String profileUpdate = '$baseUrl/auth/profile';
 
   // Dashboard
   static const String dashboardSummary = '$baseUrl/dashboard/summary';

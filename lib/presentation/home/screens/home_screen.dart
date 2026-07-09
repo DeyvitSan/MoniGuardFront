@@ -4,12 +4,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../../data/repositories/local_storage_service.dart';
 import '../../../data/repositories/dashboard_repository.dart';
+import '../../../features/auth/presentation/pages/login_page.dart';
+import '../../../features/auth/presentation/pages/register_page.dart';
+import '../../../features/profile/domain/profile_repository.dart';
+import '../../../features/profile/presentation/provider/profile_provider.dart';
+import '../../../features/profile/presentation/pages/profile_page.dart';
 import '../controller/home_controller.dart';
-import '../../profile/screens/profile_screen.dart';
 import '../widgets/dashboard_widgets.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,28 +28,47 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final HomeController _ctrl;
+  late final ProfileProvider _profileController;
 
   @override
   void initState() {
     super.initState();
     _ctrl = HomeController(repository: DashboardRepository());
-    // Carga inicial al montar la pantalla
+    _profileController = ProfileProvider(repository: GetIt.instance<ProfileRepository>());
     _ctrl.loadSummary(accessToken: widget.accessToken);
+    _profileController.loadProfile();
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _profileController.dispose();
     super.dispose();
   }
 
-  String _initials() {
-    const name = 'Juan Pérez';
-    final parts = name.split(' ');
-    final a = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0][0] : '';
-    final b = parts.length > 1 && parts[1].isNotEmpty ? parts[1][0] : '';
-    return '$a$b'.toUpperCase();
-  }
+  String _initials() => _profileController.initials;
+
+  Widget _buildLoginPage() => LoginPage(
+        onLoginSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        ),
+        onGoToRegister: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => _buildRegisterPage()),
+          (route) => false,
+        ),
+      );
+
+  Widget _buildRegisterPage() => RegisterPage(
+        onRegisterSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => _buildLoginPage()),
+          (route) => false,
+        ),
+        onGoToLogin: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => _buildLoginPage()),
+          (route) => false,
+        ),
+      );
 
   // ── Build
   @override
@@ -53,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final cs = Theme.of(context).colorScheme;
 
     return AnimatedBuilder(
-      animation: _ctrl,
+      animation: Listenable.merge([_ctrl, _profileController]),
       builder: (context, _) {
         return Scaffold(
           // Drawer lateral con acceso a perfil
@@ -62,8 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.zero,
               children: [
                 UserAccountsDrawerHeader(
-                  accountName: const Text('Juan Pérez'),
-                  accountEmail: const Text('juan@example.com'),
+                  accountName: Text(_profileController.name),
+                  accountEmail: Text(_profileController.email),
                   currentAccountPicture: CircleAvatar(
                     child: Text(_initials()),
                   ),
@@ -73,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   title: const Text('Perfil'),
                   onTap: () {
                     Navigator.of(context).pop();
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ProfilePage()));
                   },
                 ),
                 const Divider(),
@@ -81,9 +104,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   leading: const Icon(Icons.logout),
                   title: const Text('Cerrar sesión'),
                   onTap: () async {
-                    final storage = LocalStorageService();
-                    await storage.clearAll();
-                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    await _profileController.logout();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => _buildLoginPage()),
+                      (route) => false,
+                    );
                   },
                 ),
               ],
@@ -104,11 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 label: 'Bitácoras',
                 subtitle: 'Módulo en construcción',
               ),
-              const _PlaceholderTab(
-                icon: Icons.person_outline_rounded,
-                label: 'Perfil',
-                subtitle: 'Módulo en construcción',
-              ),
+              const ProfilePage(showAppBar: false),
             ],
           ),
 

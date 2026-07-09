@@ -3,16 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-<<<<<<< HEAD:lib/presentation/login/screens/login_screen.dart
-import '../../../core/utils/validators.dart';
-import '../../../data/repositories/auth_repository.dart';
-import '../../../data/repositories/local_storage_service.dart';
-import '../controllers/login_controller.dart';
-=======
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../data/repositories/local_storage_service.dart';
 import '../provider/login_provider.dart';
->>>>>>> 31d85f8b2067cfa743e6eaf61a15f47ef31f13c8:lib/features/auth/presentation/pages/login_page.dart
 import '../widgets/moniguard_wordmark.dart';
 
 class LoginPage extends StatelessWidget {
@@ -77,9 +71,9 @@ class _LoginViewState extends State<_LoginView> {
 
     if (ctrl.status == LoginStatus.success) {
       HapticFeedback.mediumImpact();
-      // Store the logged user's email for re-authentication needs
       final storage = LocalStorageService();
       await storage.setUserEmail(email: _emailCtrl.text.trim());
+      await storage.setUserName(value: ctrl.authResponse?.user.nombre ?? 'Usuario');
       widget.onLoginSuccess(context);
     } else if (ctrl.status == LoginStatus.failure) {
       HapticFeedback.heavyImpact();
