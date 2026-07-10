@@ -1,4 +1,5 @@
-abstract interface class ILocalStorageService {
+// features/onboarding/domain/local_storage_service.dart
+abstract interface class LocalStorageService {
   // Persiste el flag que indica que el usuario ya vio el onboarding.
   Future<void> setHasSeenOnboarding({required bool value});
 

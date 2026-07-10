@@ -1,7 +1,8 @@
+// features/onboarding/data/repositories/local_storage_service_impl.dart
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/interfaces/i_local_storage_service.dart';
+import '../../domain/local_storage_service.dart';
 
-class LocalStorageService implements ILocalStorageService {
+class LocalStorageServiceImpl implements LocalStorageService {
   static const String _keyHasSeenOnboarding = 'has_seen_onboarding';
 
   @override

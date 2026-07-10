@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 enum NivelRiesgo { bajo, medio, alto, desconocido }
 
 extension NivelRiesgoX on NivelRiesgo {
@@ -21,7 +22,6 @@ extension NivelRiesgoX on NivelRiesgo {
   }
 }
 
-// Sub-modelos
 @immutable
 class ParcelaInfo {
   final String id;
@@ -43,9 +43,9 @@ class ParcelaInfo {
 
 @immutable
 class ClimaData {
-  final double   temperatura;   // °C
-  final double   humedad;       // %
-  final double   precipitacion; // mm
+  final double   temperatura;
+  final double   humedad;
+  final double   precipitacion;
   final DateTime actualizadoEn;
 
   const ClimaData({
@@ -66,7 +66,7 @@ class ClimaData {
 @immutable
 class RiesgoData {
   final NivelRiesgo nivel;
-  final int         porcentaje; // 0-100
+  final int         porcentaje;
   final String      descripcion;
 
   const RiesgoData({
@@ -82,8 +82,6 @@ class RiesgoData {
   );
 }
 
-
-// Modelo raíz
 @immutable
 class DashboardSummary {
   final ParcelaInfo parcela;

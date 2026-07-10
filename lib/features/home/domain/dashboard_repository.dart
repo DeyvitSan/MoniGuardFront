@@ -1,8 +1,7 @@
-import '../models/dashboard_summary.dart';
+import 'entities/dashboard_summary.dart';
 
-abstract interface class IDashboardRepository {
-  // Obtiene el resumen del dashboard para el usuario autenticado.
-  // Requiere el [accessToken] para el header Authorization.
+abstract interface class DashboardRepository {
+  //Obtiene el resumen del dashboard para el usuario autenticado.
   Future<DashboardSummary> getSummary({required String accessToken});
 }
 
