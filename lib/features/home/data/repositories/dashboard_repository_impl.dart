@@ -2,17 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import '../../core/constants/api_constants.dart';
-import '../../domain/interfaces/i_dashboard_repository.dart';
-import '../../domain/models/dashboard_summary.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../domain/dashboard_repository.dart';
+import '../../domain/entities/dashboard_summary.dart';
 
-class DashboardRepository implements IDashboardRepository {
+class DashboardRepositoryImpl implements DashboardRepository {
   final http.Client _client;
 
   //Cambia a false cuando el backend tenga el endpoint listo
   static const bool _useMock = true;
 
-  DashboardRepository({http.Client? client})
+  DashboardRepositoryImpl({http.Client? client})
       : _client = client ?? http.Client();
 
   @override
@@ -41,7 +41,6 @@ class DashboardRepository implements IDashboardRepository {
     }
   }
 
-  //Parseo
   DashboardSummary _handleResponse(http.Response response) {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     switch (response.statusCode) {
@@ -60,9 +59,8 @@ class DashboardRepository implements IDashboardRepository {
     }
   }
 
-  //Mock
-  // Simula latencia de red real para que la UI de carga funcione en pruebas.
-  // Elimina (o pon _useMock = false) cuando el backend esté listo.
+  //TODO(equipo): eliminar este mock (o poner _useMock = false) cuando el
+  //pipeline de ML + backend real de dashboard esté conectado.
   Future<DashboardSummary> _mockSummary() async {
     await Future.delayed(const Duration(milliseconds: 1200));
     return DashboardSummary.fromJson({

@@ -1,3 +1,4 @@
+// features/onboarding/presentation/widgets/onboarding_page_indicator.dart
 import 'package:flutter/material.dart';
 
 class OnboardingPageIndicator extends StatelessWidget {
@@ -30,7 +31,6 @@ class OnboardingPageIndicator extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
-        //Dot activo: píldora larga; inactivo: círculo pequeño
         width: isActive ? 28.0 : 8.0,
         height: 8.0,
         decoration: BoxDecoration(

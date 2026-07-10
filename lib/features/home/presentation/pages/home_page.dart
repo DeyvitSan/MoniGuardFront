@@ -1,62 +1,47 @@
-// Pantalla principal de MoniGuard — Dashboard.
-// Presentación pura: delega toda la lógica al HomeController.
-// BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil.
-
+// Presentación pura: delega toda la lógica al HomeProvider.
+// BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../data/repositories/dashboard_repository.dart';
-import '../controller/home_controller.dart';
-import '../widgets/dashboard_widgets.dart';
-import '../../../features/bitacora/presentation/pages/bitacora_page.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../bitacora/presentation/pages/bitacora_page.dart';
+import '../provider/home_provider.dart';
+import '../widgets/dashboard_header.dart';
+import '../widgets/clima_indicator_card.dart';
+import '../widgets/riesgo_moniliasis_card.dart';
+import '../widgets/ultima_bitacora_card.dart';
+import '../widgets/dashboard_skeleton.dart';
 
-class HomeScreen extends StatefulWidget {
-  //Token de sesión — en la siguiente iteración vendrá de flutter_secure_storage.
-  final String accessToken;
-
-  const HomeScreen({super.key, this.accessToken = ''});
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<HomeProvider>(
+      create: (_) => getIt<HomeProvider>()..loadSummary(),
+      child: const _HomeView(),
+    );
+  }
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  late final HomeController _ctrl;
+class _HomeView extends StatelessWidget {
+  const _HomeView();
 
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = HomeController(repository: DashboardRepository());
-    // Carga inicial al montar la pantalla
-    _ctrl.loadSummary(accessToken: widget.accessToken);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  // ── Build
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, _) {
+    return Consumer<HomeProvider>(
+      builder: (context, ctrl, _) {
         return Scaffold(
           backgroundColor: cs.surface,
-
-          // ── AppBar
-          appBar: _buildAppBar(context, cs),
-
-          // ── Cuerpo según tab activo
+          appBar: _buildAppBar(context, cs, ctrl),
           body: IndexedStack(
-            index: _ctrl.tabIndex,
+            index: ctrl.tabIndex,
             children: [
-              _DashboardTab(ctrl: _ctrl),
+              _DashboardTab(ctrl: ctrl),
               BitacoraPage(
                 onSessionExpired: () {
                   Navigator.of(context).pushReplacementNamed('/login');
@@ -69,13 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-
-          // ── BottomNavigationBar
           bottomNavigationBar: NavigationBar(
-            selectedIndex: _ctrl.tabIndex,
+            selectedIndex: ctrl.tabIndex,
             onDestinationSelected: (i) {
               HapticFeedback.selectionClick();
-              _ctrl.setTab(i);
+              ctrl.setTab(i);
             },
             destinations: const [
               NavigationDestination(
@@ -100,9 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, ColorScheme cs) {
+  PreferredSizeWidget _buildAppBar(
+      BuildContext context, ColorScheme cs, HomeProvider ctrl) {
     return AppBar(
-      // Wordmark como título
       title: RichText(
         text: TextSpan(
           children: [
@@ -120,10 +103,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       actions: [
-        // Botón de refresh manual
-        if (_ctrl.tabIndex == 0)
+        if (ctrl.tabIndex == 0)
           IconButton(
-            icon: _ctrl.isLoading
+            icon: ctrl.isLoading
                 ? SizedBox(
               width: 18, height: 18,
               child: CircularProgressIndicator(
@@ -131,9 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
             )
                 : const Icon(Icons.refresh_rounded),
             tooltip: 'Actualizar datos',
-            onPressed: _ctrl.isLoading
-                ? null
-                : () => _ctrl.refresh(accessToken: widget.accessToken),
+            onPressed: ctrl.isLoading ? null : () => ctrl.refresh(),
           ),
         const SizedBox(width: 8),
       ],
@@ -141,10 +121,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// TAB 0 — Dashboard principal
-
+//TAB 0 — Dashboard principal
 class _DashboardTab extends StatelessWidget {
-  final HomeController ctrl;
+  final HomeProvider ctrl;
   const _DashboardTab({required this.ctrl});
 
   @override
@@ -158,17 +137,12 @@ class _DashboardTab extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: switch (ctrl.status) {
-        // ── Cargando
           DashboardStatus.idle || DashboardStatus.loading =>
           const DashboardSkeleton(),
-
-        // ── Error ────────────────────────────────────────────────────────
           DashboardStatus.failure => _ErrorView(
             message: ctrl.errorMessage ?? 'Error desconocido',
             onRetry: ctrl.refresh,
           ),
-
-        // ── Datos cargados ───────────────────────────────────────────────
           DashboardStatus.success => _DashboardContent(
             summary: ctrl.summary!,
           ),
@@ -178,11 +152,8 @@ class _DashboardTab extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Contenido del dashboard cuando los datos están disponibles
-// ─────────────────────────────────────────────────────────────────────────────
 class _DashboardContent extends StatelessWidget {
-  final dynamic summary; // DashboardSummary
+  final dynamic summary;
   const _DashboardContent({required this.summary});
 
   @override
@@ -193,7 +164,6 @@ class _DashboardContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Header parcela ────────────────────────────────────────────────
         DashboardHeader(
           nombreParcela:  summary.parcela.nombre,
           ubicacion:      summary.parcela.ubicacion,
@@ -201,11 +171,9 @@ class _DashboardContent extends StatelessWidget {
         ),
         const SizedBox(height: 28),
 
-        // ── Sección clima ─────────────────────────────────────────────────
         _SectionLabel(label: 'CONDICIONES ACTUALES', textTheme: tt, colorScheme: cs),
         const SizedBox(height: 12),
 
-        // 3 tarjetas en fila
         Row(
           children: [
             Expanded(
@@ -241,18 +209,15 @@ class _DashboardContent extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        // ── Riesgo Moniliasis ─────────────────────────────────────────────
         _SectionLabel(label: 'DIAGNÓSTICO DE RIESGO', textTheme: tt, colorScheme: cs),
         const SizedBox(height: 12),
         RiesgoMoniliasisCard(riesgo: summary.riesgo),
         const SizedBox(height: 16),
 
-        // ── Última bitácora ───────────────────────────────────────────────
         _SectionLabel(label: 'REGISTRO DE CAMPO', textTheme: tt, colorScheme: cs),
         const SizedBox(height: 12),
         UltimaBitacoraCard(fecha: summary.ultimaBitacora),
 
-        // ── Timestamp de actualización ────────────────────────────────────
         const SizedBox(height: 20),
         Center(
           child: Text(
@@ -270,10 +235,6 @@ class _DashboardContent extends StatelessWidget {
         '${local.minute.toString().padLeft(2, '0')}';
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Widgets de apoyo
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String label;
@@ -311,7 +272,7 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           children: [
             Icon(Icons.cloud_off_rounded, size: 64,
-                color: cs.onSurfaceVariant.withOpacity(0.4)),
+                color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
             const SizedBox(height: 20),
             Text(message,
                 textAlign: TextAlign.center,
@@ -329,7 +290,7 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-/// Tab placeholder para Bitácoras y Perfil mientras se implementan
+// Tab placeholder para Perfil mientras se implementa
 class _PlaceholderTab extends StatelessWidget {
   final IconData icon;
   final String   label;
@@ -345,7 +306,7 @@ class _PlaceholderTab extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 56, color: cs.onSurfaceVariant.withOpacity(0.4)),
+          Icon(icon, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
           const SizedBox(height: 16),
           Text(label, style: tt.titleMedium),
           const SizedBox(height: 6),

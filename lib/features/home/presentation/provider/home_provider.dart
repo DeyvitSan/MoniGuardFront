@@ -1,43 +1,33 @@
-// Maneja dos responsabilidades mínimas del Home:
-//   1. Índice activo del BottomNavigationBar
-//   2. Carga y estado de los datos del dashboard
-
 import 'package:flutter/foundation.dart';
 
-import '../../../domain/interfaces/i_dashboard_repository.dart';
-import '../../../domain/models/dashboard_summary.dart';
+import '../../domain/dashboard_repository.dart';
+import '../../domain/entities/dashboard_summary.dart';
 
 enum DashboardStatus { idle, loading, success, failure }
 
-class HomeController extends ChangeNotifier {
-  final IDashboardRepository _repo;
+class HomeProvider extends ChangeNotifier {
+  final DashboardRepository _repo;
 
-  HomeController({required IDashboardRepository repository})
+  HomeProvider({required DashboardRepository repository})
       : _repo = repository;
 
-  //Estado
   int               _tabIndex  = 0;
   DashboardStatus   _status    = DashboardStatus.idle;
   String?           _errorMessage;
   DashboardSummary? _summary;
 
-  //Getters
   int               get tabIndex     => _tabIndex;
   DashboardStatus   get status       => _status;
   String?           get errorMessage => _errorMessage;
   DashboardSummary? get summary      => _summary;
   bool              get isLoading    => _status == DashboardStatus.loading;
 
-  //Tab navigation
   void setTab(int index) {
     if (_tabIndex == index) return;
     _tabIndex = index;
     notifyListeners();
   }
 
-  //Carga de datos
-  // accessToken: en la siguiente iteración lo sacamos de flutter_secure_storage.
-  // Por ahora se pasa desde la pantalla (viene del AuthResponse del login).
   Future<void> loadSummary({String accessToken = ''}) async {
     _status       = DashboardStatus.loading;
     _errorMessage = null;
@@ -57,7 +47,6 @@ class HomeController extends ChangeNotifier {
     }
   }
 
-  // Refresh
   Future<void> refresh({String accessToken = ''}) =>
       loadSummary(accessToken: accessToken);
 }

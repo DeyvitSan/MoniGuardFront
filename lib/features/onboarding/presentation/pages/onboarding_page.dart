@@ -1,9 +1,11 @@
+// features/onboarding/presentation/pages/onboarding_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../../domain/interfaces/i_local_storage_service.dart';
-import '../../../domain/models/onboarding_page_model.dart';
+import '../../../../core/di/injection_container.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../domain/entities/onboarding_page_model.dart';
+import '../../domain/local_storage_service.dart';
 import '../widgets/onboarding_page_content.dart';
 import '../widgets/onboarding_page_indicator.dart';
 
@@ -34,28 +36,21 @@ const List<OnboardingPageModel> _kOnboardingPages = [
   ),
 ];
 
-//PANTALLA
-class OnboardingScreen extends StatefulWidget {
-  ///Servicio de storage inyectado — depende de la abstracción, no de la impl.
-  final ILocalStorageService storageService;
-
-  ///Callback invocado cuando el onboarding finaliza.
-  ///Recibe el [BuildContext] activo para que el llamador pueda navegar.
-  ///La navegación real ocurre en el widget padre (AppRouter), no aquí.
+class OnboardingPage extends StatefulWidget {
   final void Function(BuildContext context) onCompleted;
 
-  const OnboardingScreen({
+  const OnboardingPage({
     super.key,
-    required this.storageService,
     required this.onCompleted,
   });
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  State<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingPageState extends State<OnboardingPage> {
   final PageController _pageController = PageController();
+  final LocalStorageService _storageService = getIt<LocalStorageService>();
   int _currentPage = 0;
 
   bool get _isLastPage => _currentPage == _kOnboardingPages.length - 1;
@@ -66,10 +61,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  //Navegación
-
   void _onPageChanged(int index) {
-    HapticFeedback.selectionClick();   //micro-interacción táctil
+    HapticFeedback.selectionClick();
     setState(() => _currentPage = index);
   }
 
@@ -91,12 +84,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finishOnboarding() async {
-    await widget.storageService.setHasSeenOnboarding(value: true);
+    await _storageService.setHasSeenOnboarding(value: true);
     if (!mounted) return;
     widget.onCompleted(context);
   }
-
-  //Build
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +100,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            //Barra superior: logo + skip
             _TopBar(
               onSkip: _isLastPage ? null : _skip,
               textStyle: tt.labelLarge?.copyWith(
@@ -117,7 +107,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            //Contenido paginado
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -129,7 +118,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
 
-            //Footer: indicadores + botón
             _Footer(
               pageCount: _kOnboardingPages.length,
               currentIndex: _currentPage,
@@ -152,7 +140,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-// Sub-widgets privados del orquestador
 class _TopBar extends StatelessWidget {
   final VoidCallback? onSkip;
   final TextStyle? textStyle;
@@ -165,7 +152,6 @@ class _TopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: [
-          //Logotipo / wordmark
           RichText(
             text: TextSpan(
               children: [
@@ -189,7 +175,6 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          //Botón "Omitir" — solo visible cuando no es la última página
           AnimatedOpacity(
             opacity: onSkip != null ? 1.0 : 0.0,
             duration: const Duration(milliseconds: 200),
@@ -242,7 +227,6 @@ class _Footer extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          //Indicadores de página
           OnboardingPageIndicator(
             pageCount: pageCount,
             currentIndex: currentIndex,
@@ -250,7 +234,6 @@ class _Footer extends StatelessWidget {
             inactiveColor: inactiveColor,
           ),
 
-          //Botón de avance — cambia label en la última página
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (child, anim) => ScaleTransition(

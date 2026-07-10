@@ -1,6 +1,7 @@
+// features/onboarding/presentation/widgets/onboarding_page_content.dart
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../domain/models/onboarding_page_model.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../domain/entities/onboarding_page_model.dart';
 
 class OnboardingPageContent extends StatelessWidget {
   final OnboardingPageModel model;
@@ -18,15 +19,12 @@ class OnboardingPageContent extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          //Ilustración / Ícono premium
           _IconDisplay(model: model),
           const SizedBox(height: 48),
 
-          //TAG eyebrow
           _TagChip(tag: model.tag, accent: model.accentColor),
           const SizedBox(height: 16),
 
-          //Título editorial (Playfair Display)
           Text(
             model.title,
             style: tt.displaySmall?.copyWith(
@@ -37,7 +35,6 @@ class OnboardingPageContent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          //Descripción (Urbanist)
           Text(
             model.description,
             style: tt.bodyLarge?.copyWith(
@@ -51,7 +48,6 @@ class OnboardingPageContent extends StatelessWidget {
   }
 }
 
-//Sub-widget: Contenedor del ícono con decoración geométrica
 class _IconDisplay extends StatelessWidget {
   final OnboardingPageModel model;
   const _IconDisplay({required this.model});
@@ -65,29 +61,26 @@ class _IconDisplay extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          //Fondo geométrico — círculo exterior difuso
           Container(
             width: 200,
             height: 200,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: model.accentColor.withOpacity(0.06),
+              color: model.accentColor.withValues(alpha: 0.06),
             ),
           ),
-          //Anillo interior
           Container(
             width: 148,
             height: 148,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: model.accentColor.withOpacity(0.18),
+                color: model.accentColor.withValues(alpha: 0.18),
                 width: 1.5,
               ),
-              color: model.accentColor.withOpacity(0.10),
+              color: model.accentColor.withValues(alpha: 0.10),
             ),
           ),
-          //Ícono principal
           Container(
             width: 88,
             height: 88,
@@ -96,7 +89,7 @@ class _IconDisplay extends StatelessWidget {
               color: cs.surfaceContainerHighest,
               boxShadow: [
                 BoxShadow(
-                  color: model.accentColor.withOpacity(0.25),
+                  color: model.accentColor.withValues(alpha: 0.25),
                   blurRadius: 24,
                   spreadRadius: 2,
                 ),
@@ -108,7 +101,6 @@ class _IconDisplay extends StatelessWidget {
               color: model.accentColor,
             ),
           ),
-          //Acento decorativo — punto orbital
           Positioned(
             top: 24,
             right: 36,
@@ -117,7 +109,7 @@ class _IconDisplay extends StatelessWidget {
               height: 10,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: model.accentColor.withOpacity(0.55),
+                color: model.accentColor.withValues(alpha: 0.55),
               ),
             ),
           ),
@@ -129,7 +121,7 @@ class _IconDisplay extends StatelessWidget {
               height: 6,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.forestDeep.withOpacity(0.40),
+                color: AppColors.forestDeep.withValues(alpha: 0.40),
               ),
             ),
           ),
@@ -139,7 +131,6 @@ class _IconDisplay extends StatelessWidget {
   }
 }
 
-// Sub-widget: Chip de tag tipo "eyebrow label"
 class _TagChip extends StatelessWidget {
   final String tag;
   final Color accent;
@@ -153,7 +144,7 @@ class _TagChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: ShapeDecoration(
         shape: const StadiumBorder(),
-        color: accent.withOpacity(0.12),
+        color: accent.withValues(alpha: 0.12),
       ),
       child: Text(
         tag,

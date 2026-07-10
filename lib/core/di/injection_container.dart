@@ -1,6 +1,9 @@
 import 'package:get_it/get_it.dart';
 import '../../features/auth/di/injection_auth.dart';
 import '../../features/bitacora/di/injection_bitacora.dart';
+import '../../features/home/di/injection_home.dart';
+import '../../features/onboarding/di/injection_onboarding.dart';
+
 
 
 import '../session/session_service.dart';
@@ -16,4 +19,6 @@ Future<void> initDependencies() async {
   // ── Cada feature registra las suyas aquí, según se vayan migrando:
    initAuthDependencies(getIt);
    initBitacoraDependencies(getIt);
+   initHomeDependencies(getIt);
+   initOnboardingDependencies(getIt);
 }
