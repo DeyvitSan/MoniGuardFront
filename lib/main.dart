@@ -8,6 +8,8 @@ import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
+import 'features/parcela/domain/parcela_repository.dart';
+import 'features/parcela/presentation/pages/parcela_setup_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,8 +49,23 @@ class MoniGuardApp extends StatelessWidget {
   );
 
   Widget _loginPage() => LoginPage(
-    onLoginSuccess: (ctx) => _pushReplacement(ctx, const HomePage()),
+    onLoginSuccess: (ctx) async {
+      // Tras login, decide si manda a configurar parcela o directo a Home.
+      final tieneParcela = await getIt<ParcelaRepository>().tieneParcela();
+      if (!ctx.mounted) return;
+
+      if (tieneParcela) {
+        _pushReplacement(ctx, const HomePage());
+      } else {
+        _pushReplacement(ctx, _parcelaSetupPage());
+      }
+    },
     onGoToRegister: (ctx) => _pushReplacement(ctx, _registerPage()),
+  );
+
+  Widget _parcelaSetupPage() => ParcelaSetupPage(
+    onCompleted: (ctx) => _pushReplacement(ctx, const HomePage()),
+    onSessionExpired: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
   );
 
   Widget _registerPage() => RegisterPage(

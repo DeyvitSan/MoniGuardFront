@@ -1,11 +1,9 @@
-// La URL base se inyecta en tiempo de compilación con --dart-define-from-file.
-// NUNCA hardcodear IPs de hotspot (172.20.10.x): cambian en cada reconexión
-// y no existen en producción. Ver config/dev.json y config/prod.json.
-//   flutter run   --dart-define-from-file=config/dev.json
-//   flutter build apk --release --dart-define-from-file=config/prod.json
+//La URL base se inyecta en tiempo de compilación con --dart-define-from-file.
+//NUNCA hardcodear IPs de hotspot (172.20.10.x): cambian en cada reconexión
+//y no existen en producción. Ver config/dev.json y config/prod.json.
+//flutter run   --dart-define-from-file=config/dev.json
+//flutter build apk --release --dart-define-from-file=config/prod.json
 abstract final class ApiConstants {
-  // 10.0.2.2 = alias del emulador el localhost de la maquina.
-  // Es el default seguro para desarrollo; prod lo sobreescribe por dart-define.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://192.168.100.8:3000/api/v1',
@@ -20,6 +18,10 @@ abstract final class ApiConstants {
 
   //Bitácora
   static const String bitacoras = '$baseUrl/bitacoras';
+
+  //Parcelas
+  static const String parcelas = '$baseUrl/parcelas';
+  static const String parcelasTiene = '$baseUrl/parcelas/tiene';
 
   //Clima (fuente externa, no pasa por nuestro gateway)
   static const String openMeteoBaseUrl = 'https://api.open-meteo.com/v1/forecast';

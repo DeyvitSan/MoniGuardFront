@@ -9,7 +9,7 @@ import '../provider/login_provider.dart';
 import '../widgets/moniguard_wordmark.dart';
 
 class LoginPage extends StatelessWidget {
-  final void Function(BuildContext context) onLoginSuccess;
+  final Future<void> Function(BuildContext context) onLoginSuccess;
   final void Function(BuildContext context) onGoToRegister;
 
   const LoginPage({
@@ -31,7 +31,7 @@ class LoginPage extends StatelessWidget {
 }
 
 class _LoginView extends StatefulWidget {
-  final void Function(BuildContext context) onLoginSuccess;
+  final Future<void> Function(BuildContext context) onLoginSuccess;
   final void Function(BuildContext context) onGoToRegister;
 
   const _LoginView({
@@ -70,7 +70,7 @@ class _LoginViewState extends State<_LoginView> {
 
     if (ctrl.status == LoginStatus.success) {
       HapticFeedback.mediumImpact();
-      widget.onLoginSuccess(context);
+      await widget.onLoginSuccess(context);
     } else if (ctrl.status == LoginStatus.failure) {
       HapticFeedback.heavyImpact();
       _showErrorSnackbar(ctrl.errorMessage ?? 'Error desconocido');
