@@ -1,64 +1,87 @@
-// Presentación pura: delega toda la lógica al HomeProvider.
-// BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil
+// Pantalla principal de MoniGuard — Dashboard.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../bitacora/presentation/pages/bitacora_page.dart';
-import '../provider/home_provider.dart';
-import '../widgets/dashboard_header.dart';
-import '../widgets/clima_indicator_card.dart';
-import '../widgets/riesgo_moniliasis_card.dart';
-import '../widgets/ultima_bitacora_card.dart';
-import '../widgets/dashboard_skeleton.dart';
+import '../../../home/presentation/provider/home_provider.dart';
+import '../../../home/presentation/widgets/clima_indicator_card.dart';
+import '../../../home/presentation/widgets/dashboard_header.dart';
+import '../../../home/presentation/widgets/dashboard_skeleton.dart';
+import '../../../home/presentation/widgets/riesgo_moniliasis_card.dart';
+import '../../../home/presentation/widgets/ultima_bitacora_card.dart';
+import '../../../home/domain/dashboard_repository.dart';
+import '../../../home/data/repositories/dashboard_repository_impl.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
+import '../../../profile/presentation/provider/profile_provider.dart';
+import '../../../profile/data/repositories/profile_repository_impl.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomeScreen extends StatefulWidget {
+  /// Token de sesión — en la siguiente iteración vendrá de flutter_secure_storage.
+  final String accessToken;
+
+  const HomeScreen({super.key, this.accessToken = ''});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<HomeProvider>(
-      create: (_) => getIt<HomeProvider>()..loadSummary(),
-      child: const _HomeView(),
-    );
-  }
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeView extends StatelessWidget {
-  const _HomeView();
+class _HomeScreenState extends State<HomeScreen> {
+  late final HomeProvider _ctrl;
+  late final ProfileProvider _profileController;
 
+  @override
+  void initState() {
+    super.initState();
+    final repository = ProfileRepositoryImpl();
+    _profileController = ProfileProvider(repository: repository);
+    _ctrl = HomeProvider(repository: DashboardRepositoryImpl());
+    _ctrl.loadSummary(accessToken: widget.accessToken);
+    _profileController.loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _profileController.dispose();
+    super.dispose();
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return Consumer<HomeProvider>(
-      builder: (context, ctrl, _) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (context, _) {
         return Scaffold(
           backgroundColor: cs.surface,
-          appBar: _buildAppBar(context, cs, ctrl),
+
+          // ── AppBar ────────────────────────────────────────────────────────
+          appBar: _buildAppBar(context, cs),
+
+          // ── Cuerpo según tab activo ────────────────────────────────────────
           body: IndexedStack(
-            index: ctrl.tabIndex,
+            index: _ctrl.tabIndex,
             children: [
-              _DashboardTab(ctrl: ctrl),
+              _DashboardTab(ctrl: _ctrl),
               BitacoraPage(
                 onSessionExpired: () {
                   Navigator.of(context).pushReplacementNamed('/login');
                 },
               ),
-              const _PlaceholderTab(
-                icon: Icons.person_outline_rounded,
-                label: 'Perfil',
-                subtitle: 'Módulo en construcción',
-              ),
+              const ProfilePage(showAppBar: false),
             ],
           ),
+
+          // ── BottomNavigationBar ───────────────────────────────────────────
           bottomNavigationBar: NavigationBar(
-            selectedIndex: ctrl.tabIndex,
+            selectedIndex: _ctrl.tabIndex,
             onDestinationSelected: (i) {
               HapticFeedback.selectionClick();
-              ctrl.setTab(i);
+              _ctrl.setTab(i);
             },
             destinations: const [
               NavigationDestination(
@@ -83,8 +106,7 @@ class _HomeView extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
-      BuildContext context, ColorScheme cs, HomeProvider ctrl) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, ColorScheme cs) {
     return AppBar(
       title: RichText(
         text: TextSpan(
@@ -103,9 +125,9 @@ class _HomeView extends StatelessWidget {
         ),
       ),
       actions: [
-        if (ctrl.tabIndex == 0)
+        if (_ctrl.tabIndex == 0)
           IconButton(
-            icon: ctrl.isLoading
+            icon: _ctrl.isLoading
                 ? SizedBox(
               width: 18, height: 18,
               child: CircularProgressIndicator(
@@ -113,7 +135,7 @@ class _HomeView extends StatelessWidget {
             )
                 : const Icon(Icons.refresh_rounded),
             tooltip: 'Actualizar datos',
-            onPressed: ctrl.isLoading ? null : () => ctrl.refresh(),
+            onPressed: _ctrl.isLoading ? null : () => _ctrl.refresh(),
           ),
         const SizedBox(width: 8),
       ],
@@ -121,7 +143,9 @@ class _HomeView extends StatelessWidget {
   }
 }
 
-//TAB 0 — Dashboard principal
+// ─────────────────────────────────────────────────────────────────────────────
+// TAB 0 — Dashboard principal
+// ─────────────────────────────────────────────────────────────────────────────
 class _DashboardTab extends StatelessWidget {
   final HomeProvider ctrl;
   const _DashboardTab({required this.ctrl});
@@ -137,6 +161,7 @@ class _DashboardTab extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: switch (ctrl.status) {
+        // ── Cargando ────────────────────────────────────────────────────
           DashboardStatus.idle || DashboardStatus.loading =>
           const DashboardSkeleton(),
           DashboardStatus.failure => _ErrorView(

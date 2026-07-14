@@ -3,13 +3,11 @@ import 'package:flutter/services.dart';
 
 import 'core/di/injection_container.dart';
 import 'core/theme/app_theme.dart';
-import 'features/onboarding/domain/local_storage_service.dart';
-import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/auth/presentation/pages/login_page.dart';
-import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
-import 'features/parcela/domain/parcela_repository.dart';
-import 'features/parcela/presentation/pages/parcela_setup_page.dart';
+import 'features/onboarding/presentation/pages/onboarding_page.dart';
+import 'features/profile/presentation/pages/profile_page.dart';
+import 'features/onboarding/domain/local_storage_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,10 +25,7 @@ Future<void> main() async {
 class MoniGuardApp extends StatelessWidget {
   final bool hasSeenOnboarding;
 
-  const MoniGuardApp({
-    super.key,
-    required this.hasSeenOnboarding,
-  });
+  const MoniGuardApp({super.key, required this.hasSeenOnboarding});
 
   @override
   Widget build(BuildContext context) {
@@ -40,61 +35,41 @@ class MoniGuardApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: hasSeenOnboarding ? _loginPage() : _onboardingPage(),
+      home: hasSeenOnboarding ? _loginScreen() : _onboardingScreen(),
     );
   }
 
-  Widget _onboardingPage() => OnboardingPage(
-    onCompleted: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
-  );
+  Widget _onboardingScreen() => OnboardingPage(
+        onCompleted: (ctx) => _pushReplacement(ctx, _loginScreen(), fade: true),
+      );
 
-  Widget _loginPage() => LoginPage(
-    onLoginSuccess: (ctx) async {
-      // Tras login, decide si manda a configurar parcela o directo a Home.
-      final tieneParcela = await getIt<ParcelaRepository>().tieneParcela();
-      if (!ctx.mounted) return;
-
-      if (tieneParcela) {
-        _pushReplacement(ctx, const HomePage());
-      } else {
-        _pushReplacement(ctx, _parcelaSetupPage());
-      }
-    },
-    onGoToRegister: (ctx) => _pushReplacement(ctx, _registerPage()),
-  );
-
-  Widget _parcelaSetupPage() => ParcelaSetupPage(
-    onCompleted: (ctx) => _pushReplacement(ctx, const HomePage()),
-    onSessionExpired: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
-  );
-
-  Widget _registerPage() => RegisterPage(
-    onRegisterSuccess: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
-    onGoToLogin: (ctx) => _pushReplacement(ctx, _loginPage(), fade: true),
-  );
+  Widget _loginScreen() => LoginPage(
+        onLoginSuccess: (ctx) async => _pushReplacement(ctx, const HomeScreen(), fade: true),
+        onGoToRegister: (ctx) => _pushReplacement(ctx, const ProfilePage(showAppBar: false)),
+      );
 
   void _pushReplacement(BuildContext ctx, Widget page, {bool fade = false}) {
     Navigator.of(ctx).pushReplacement(
       fade
           ? PageRouteBuilder(
-        pageBuilder: (_, __, ___) => page,
-        transitionsBuilder: (_, anim, __, child) => FadeTransition(
-          opacity: CurvedAnimation(parent: anim, curve: Curves.easeInOut),
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 450),
-      )
+              pageBuilder: (_, __, ___) => page,
+              transitionsBuilder: (_, anim, __, child) => FadeTransition(
+                opacity: CurvedAnimation(parent: anim, curve: Curves.easeInOut),
+                child: child,
+              ),
+              transitionDuration: const Duration(milliseconds: 450),
+            )
           : PageRouteBuilder(
-        pageBuilder: (_, __, ___) => page,
-        transitionsBuilder: (_, anim, __, child) => SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(1.0, 0.0),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(parent: anim, curve: Curves.easeInOutCubic)),
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 380),
-      ),
+              pageBuilder: (_, __, ___) => page,
+              transitionsBuilder: (_, anim, __, child) => SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(parent: anim, curve: Curves.easeInOutCubic)),
+                child: child,
+              ),
+              transitionDuration: const Duration(milliseconds: 380),
+            ),
     );
   }
 }

@@ -41,6 +41,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
     }
   }
 
+  // ── Parseo ────────────────────────────────────────────────────────────────
   DashboardSummary _handleResponse(http.Response response) {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     switch (response.statusCode) {
@@ -59,8 +60,9 @@ class DashboardRepositoryImpl implements DashboardRepository {
     }
   }
 
-  //TODO(equipo): eliminar este mock (o poner _useMock = false) cuando el
-  //pipeline de ML + backend real de dashboard esté conectado.
+  // ── Mock ──────────────────────────────────────────────────────────────────
+  // Simula latencia de red real para que la UI de carga funcione en pruebas.
+  // Elimina (o pon _useMock = false) cuando el backend esté listo.
   Future<DashboardSummary> _mockSummary() async {
     await Future.delayed(const Duration(milliseconds: 1200));
     return DashboardSummary.fromJson({

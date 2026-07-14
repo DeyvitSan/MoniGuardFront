@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+// Nivel de riesgo — enum tipado para evitar strings sueltos por el código
+
 enum NivelRiesgo { bajo, medio, alto, desconocido }
 
 extension NivelRiesgoX on NivelRiesgo {
