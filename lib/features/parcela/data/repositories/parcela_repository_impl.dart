@@ -34,6 +34,8 @@ class ParcelaRepositoryImpl implements ParcelaRepository {
     required String ubicacion,
     required double hectareas,
     String cultivo = 'cacao',
+    double? destinoLat,
+    double? destinoLng,
   }) async {
     final token = await _requireToken();
 
@@ -46,10 +48,12 @@ class ParcelaRepositoryImpl implements ParcelaRepository {
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'nombre':    nombre,
-          'ubicacion': ubicacion,
-          'hectareas': hectareas,
-          'cultivo':   cultivo,
+          'nombre':     nombre,
+          'ubicacion':  ubicacion,
+          'hectareas':  hectareas,
+          'cultivo':    cultivo,
+          'destinoLat': destinoLat,
+          'destinoLng': destinoLng,
         }),
       )
           .timeout(ApiConstants.connectTimeout);

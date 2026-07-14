@@ -72,6 +72,8 @@ class _ParcelaSetupViewState extends State<_ParcelaSetupView> {
       nombre:    _nombreCtrl.text.trim(),
       ubicacion: _destino!.nombre,
       hectareas: double.parse(_hectareasCtrl.text.trim()),
+      destinoLat: _destino!.lat,
+      destinoLng: _destino!.lng,
     );
 
     if (!mounted) return;

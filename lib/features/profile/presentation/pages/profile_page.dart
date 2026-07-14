@@ -90,7 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildLoginPage() => LoginPage(
         onLoginSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          MaterialPageRoute(builder: (_) => const HomePage()),
           (route) => false,
         ),
         onGoToRegister: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(

@@ -21,6 +21,8 @@ class ParcelaProvider extends ChangeNotifier {
     required String ubicacion,
     required double hectareas,
     String cultivo = 'cacao',
+    double? destinoLat,
+    double? destinoLng,
   }) async {
     _status = ParcelaSetupStatus.guardando;
     _errorMessage = null;
@@ -32,6 +34,8 @@ class ParcelaProvider extends ChangeNotifier {
         ubicacion: ubicacion,
         hectareas: hectareas,
         cultivo: cultivo,
+        destinoLat: destinoLat,
+        destinoLng: destinoLng,
       );
       _status = ParcelaSetupStatus.guardado;
       notifyListeners();
