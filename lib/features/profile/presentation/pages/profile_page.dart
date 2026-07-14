@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
-import '../../../../features/auth/presentation/pages/login_page.dart';
-import '../../../../features/auth/presentation/pages/register_page.dart';
-import '../../../../presentation/home/screens/home_screen.dart';
+import '../../../auth/presentation/pages/login_page.dart';
+import '../../../auth/presentation/pages/register_page.dart';
+import '../../../home/presentation/pages/home_page.dart';
 import '../provider/profile_provider.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -112,48 +112,68 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final content = Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
-          CircleAvatar(
-            radius: 48,
-            child: Text(
-              controller.initials,
-              style: const TextStyle(fontSize: 32),
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (controller.isLoading)
-            const CircularProgressIndicator()
-          else ...[
-            Text(controller.name, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(controller.email, style: Theme.of(context).textTheme.bodyLarge),
-            if (controller.errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                controller.errorMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+    final content = Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 54,
+                child: Text(
+                  controller.initials,
+                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (controller.isLoading)
+                const CircularProgressIndicator()
+              else ...[
+                Text(
+                  controller.name,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  controller.email,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (controller.errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    controller.errorMessage!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Cerrar sesión'),
+                  onPressed: () async {
+                    await controller.logout();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesión cerrada')));
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => _buildLoginPage()),
+                      (route) => false,
+                    );
+                  },
+                ),
               ),
             ],
-          ],
-          const Spacer(),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.logout),
-            label: const Text('Cerrar sesión'),
-            onPressed: () async {
-              await controller.logout();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesión cerrada')));
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => _buildLoginPage()),
-                (route) => false,
-              );
-            },
           ),
-        ],
+        ),
       ),
     );
 

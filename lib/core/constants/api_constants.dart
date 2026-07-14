@@ -1,32 +1,25 @@
-// La URL base se inyecta en tiempo de compilación con --dart-define-from-file.
-// NUNCA hardcodear IPs de hotspot (172.20.10.x): cambian en cada reconexión
-// y no existen en producción. Ver config/dev.json y config/prod.json.
-//   flutter run   --dart-define-from-file=config/dev.json
-//   flutter build apk --release --dart-define-from-file=config/prod.json
+// lib/core/constants/api_constants.dart
+
 abstract final class ApiConstants {
-  // Para celular en la misma red Wi‑Fi, usa la IP de tu PC donde corre el gateway.
-  // Para emulador Android, usa http://10.0.2.2:3000/api/v1.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.0.44:3000/api/v1',
+    defaultValue: 'http://192.168.0.123:3000/api/v1',
   );
 
-  // Auth
-  static const String login = '$baseUrl/auth/login';
+  // ── Endpoints ──────────────────────────────────────────────────────────────
+  static const String login    = '$baseUrl/auth/login';
   static const String register = '$baseUrl/auth/register';
-  static const String profileMe = '$baseUrl/auth/me';
-  static const String profileUpdate = '$baseUrl/auth/profile';
-
-  // Dashboard
+  static const String profileMe = '$baseUrl/profile/me';
+  static const String profileUpdate = '$baseUrl/profile/update';
+  static const String openMeteoBaseUrl = 'https://api.open-meteo.com/v1/forecast';
+  static const String bitacoras = '$baseUrl/bitacoras';
+  static const String parcelas = '$baseUrl/parcelas';
+  static const String parcelasTiene = '$baseUrl/parcelas/tiene';
+  //Dash
   static const String dashboardSummary = '$baseUrl/dashboard/summary';
 
-  // Bitácora
-  static const String bitacoras = '$baseUrl/bitacoras';
 
-  // Clima (fuente externa, no pasa por nuestro gateway)
-  static const String openMeteoBaseUrl = 'https://api.open-meteo.com/v1/forecast';
-
-  // Timeouts
+  // ── Timeouts ───────────────────────────────────────────────────────────────
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 15);
 }

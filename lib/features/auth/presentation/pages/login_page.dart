@@ -5,12 +5,11 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/utils/validators.dart';
-import '../../../../data/repositories/local_storage_service.dart';
 import '../provider/login_provider.dart';
 import '../widgets/moniguard_wordmark.dart';
 
 class LoginPage extends StatelessWidget {
-  final void Function(BuildContext context) onLoginSuccess;
+  final Future<void> Function(BuildContext context) onLoginSuccess;
   final void Function(BuildContext context) onGoToRegister;
 
   const LoginPage({
@@ -32,7 +31,7 @@ class LoginPage extends StatelessWidget {
 }
 
 class _LoginView extends StatefulWidget {
-  final void Function(BuildContext context) onLoginSuccess;
+  final Future<void> Function(BuildContext context) onLoginSuccess;
   final void Function(BuildContext context) onGoToRegister;
 
   const _LoginView({
@@ -71,10 +70,7 @@ class _LoginViewState extends State<_LoginView> {
 
     if (ctrl.status == LoginStatus.success) {
       HapticFeedback.mediumImpact();
-      final storage = LocalStorageService();
-      await storage.setUserEmail(email: _emailCtrl.text.trim());
-      await storage.setUserName(value: ctrl.authResponse?.user.nombre ?? 'Usuario');
-      widget.onLoginSuccess(context);
+      await widget.onLoginSuccess(context);
     } else if (ctrl.status == LoginStatus.failure) {
       HapticFeedback.heavyImpact();
       _showErrorSnackbar(ctrl.errorMessage ?? 'Error desconocido');

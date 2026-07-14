@@ -3,22 +3,23 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../../onboarding/data/repositories/local_storage_service_impl.dart';
+
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/session/session_service.dart';
-import '../../../../data/repositories/local_storage_service.dart';
-import '../../../../domain/interfaces/i_local_storage_service.dart';
+import '../../../onboarding/domain/local_storage_service.dart';
 import '../../domain/entities/profile_user.dart';
 import '../../domain/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
-  ProfileRepositoryImpl({http.Client? client, SessionService? session, ILocalStorageService? storage})
+  ProfileRepositoryImpl({http.Client? client, SessionService? session, LocalStorageService? storage})
       : _client = client ?? http.Client(),
         _session = session ?? SessionService(),
-        _storage = storage ?? LocalStorageService();
+        _storage = storage ?? LocalStorageServiceImpl();
 
   final http.Client _client;
   final SessionService _session;
-  final ILocalStorageService _storage;
+  final LocalStorageService _storage;
 
   @override
   Future<ProfileUser> getProfile() async {

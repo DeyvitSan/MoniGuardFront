@@ -1,21 +1,21 @@
 import 'package:flutter/foundation.dart';
 
-import '../../../../data/repositories/local_storage_service.dart';
 import '../../../../core/session/session_service.dart';
-import '../../../../domain/interfaces/i_local_storage_service.dart';
+import '../../../onboarding/data/repositories/local_storage_service_impl.dart';
+import '../../../onboarding/domain/local_storage_service.dart';
 import '../../domain/profile_repository.dart';
 
 class ProfileProvider extends ChangeNotifier {
   ProfileProvider({
     required ProfileRepository repository,
-    ILocalStorageService? storageService,
+    LocalStorageService? storageService,
     SessionService? sessionService,
   })  : _repository = repository,
-        _storage = storageService ?? LocalStorageService(),
+        _storage = storageService ?? LocalStorageServiceImpl(),
         _session = sessionService ?? SessionService();
 
   final ProfileRepository _repository;
-  final ILocalStorageService _storage;
+  final LocalStorageService _storage;
   final SessionService _session;
 
   String _name = 'Usuario';
