@@ -49,6 +49,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
     }
   }
 
+  // ── Parseo ────────────────────────────────────────────────────────────────
   DashboardSummary _handleResponse(http.Response response) {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     switch (response.statusCode) {

@@ -17,13 +17,9 @@ class HomeProvider extends ChangeNotifier {
   DashboardSummary? _summary;
 
   int get tabIndex => _tabIndex;
-
   DashboardStatus get status => _status;
-
   String? get errorMessage => _errorMessage;
-
   DashboardSummary? get summary => _summary;
-
   bool get isLoading => _status == DashboardStatus.loading;
 
   void setTab(int index) {
@@ -50,7 +46,6 @@ class HomeProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 
   Future<void> refresh() => loadSummary();
 }

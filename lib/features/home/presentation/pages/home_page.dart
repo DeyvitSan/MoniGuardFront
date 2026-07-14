@@ -1,5 +1,8 @@
-// Presentación pura: delega toda la lógica al HomeProvider.
-// BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil
+// features/home/presentation/pages/home_page.dart
+// Pantalla principal de MoniGuard — Dashboard.
+// Presentación pura: delega toda la lógica a HomeProvider.
+// BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../bitacora/presentation/pages/bitacora_page.dart';
+import '../../../profile/presentation/pages/profile_page.dart';
 import '../provider/home_provider.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/clima_indicator_card.dart';
@@ -47,11 +51,7 @@ class _HomeView extends StatelessWidget {
                   Navigator.of(context).pushReplacementNamed('/login');
                 },
               ),
-              const _PlaceholderTab(
-                icon: Icons.person_outline_rounded,
-                label: 'Perfil',
-                subtitle: 'Módulo en construcción',
-              ),
+              const ProfilePage(showAppBar: false),
             ],
           ),
           bottomNavigationBar: NavigationBar(
@@ -121,7 +121,7 @@ class _HomeView extends StatelessWidget {
   }
 }
 
-//TAB 0 — Dashboard principal
+// TAB 0 — Dashboard principal
 class _DashboardTab extends StatelessWidget {
   final HomeProvider ctrl;
   const _DashboardTab({required this.ctrl});
@@ -285,34 +285,6 @@ class _ErrorView extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// Tab placeholder para Perfil mientras se implementa
-class _PlaceholderTab extends StatelessWidget {
-  final IconData icon;
-  final String   label;
-  final String   subtitle;
-  const _PlaceholderTab(
-      {required this.icon, required this.label, required this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 56, color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
-          const SizedBox(height: 16),
-          Text(label, style: tt.titleMedium),
-          const SizedBox(height: 6),
-          Text(subtitle,
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
-        ],
       ),
     );
   }

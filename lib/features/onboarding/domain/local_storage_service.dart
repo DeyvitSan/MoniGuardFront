@@ -6,6 +6,12 @@ abstract interface class LocalStorageService {
   // Lee el flag de onboarding. Retorna `false` si nunca se ha establecido.
   Future<bool> getHasSeenOnboarding();
 
+  // Persistir/leer datos del usuario autenticado.
+  Future<void> setUserEmail({required String email});
+  Future<String?> getUserEmail();
+  Future<void> setUserName({required String value});
+  Future<String?> getUserName();
+
   // Limpia todo el storage (útil para logout / remote wipe).
   Future<void> clearAll();
 }
