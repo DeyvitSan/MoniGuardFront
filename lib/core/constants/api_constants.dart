@@ -5,10 +5,10 @@
 //   flutter build apk --release --dart-define-from-file=config/prod.json
 abstract final class ApiConstants {
   // Para celular en la misma red Wi‑Fi, usa la IP de tu PC donde corre el gateway.
-  // Para emulador Android, cambia a http://10.0.2.2:3000/api/v1.
+  // Para emulador Android, usa http://10.0.2.2:3000/api/v1.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://172.20.10.3:3000/api/v1',
+    defaultValue: 'http://192.168.0.44:3000/api/v1',
   );
 
   // Auth
