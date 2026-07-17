@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'core/di/injection_container.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/profile/presentation/pages/profile_page.dart';
@@ -45,7 +46,10 @@ class MoniGuardApp extends StatelessWidget {
 
   Widget _loginScreen() => LoginPage(
         onLoginSuccess: (ctx) async => _pushReplacement(ctx, const HomeScreen(), fade: true),
-        onGoToRegister: (ctx) => _pushReplacement(ctx, const ProfilePage(showAppBar: false)),
+        onGoToRegister: (ctx) => _pushReplacement(ctx, RegisterPage(
+              onRegisterSuccess: (registerCtx) => _pushReplacement(registerCtx, _loginScreen(), fade: true),
+              onGoToLogin: (loginCtx) => _pushReplacement(loginCtx, _loginScreen(), fade: true),
+            )),
       );
 
   void _pushReplacement(BuildContext ctx, Widget page, {bool fade = false}) {

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/session/session_service.dart';
+import '../../../onboarding/data/repositories/local_storage_service_impl.dart';
 import '../../domain/auth_repository.dart';
 import '../../domain/entities/auth_response.dart';
 
@@ -41,6 +42,8 @@ class LoginProvider extends ChangeNotifier {
       );
 
       await SessionService().saveToken(_authResponse!.accessToken);
+      await LocalStorageServiceImpl().setUserName(value: _authResponse!.user.nombre);
+      await LocalStorageServiceImpl().setUserEmail(email: _authResponse!.user.email);
       _status       = LoginStatus.success;
       _errorMessage = null;
 

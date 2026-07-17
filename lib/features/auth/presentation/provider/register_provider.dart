@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../onboarding/data/repositories/local_storage_service_impl.dart';
 import '../../domain/auth_repository.dart';
 import '../../domain/entities/auth_response.dart';
 
@@ -49,6 +50,8 @@ class RegisterProvider extends ChangeNotifier {
         email:    email,
         password: password,
       );
+      await LocalStorageServiceImpl().setUserName(value: nombre);
+      await LocalStorageServiceImpl().setUserEmail(email: email);
       _status       = RegisterStatus.success;
       _errorMessage = null;
 

@@ -67,7 +67,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final response = await _client
           .put(
-            Uri.parse(ApiConstants.profileUpdate),
+            Uri.parse(ApiConstants.profileNameUpdate),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $token',
@@ -80,14 +80,59 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data is Map<String, dynamic>) {
+          final currentEmail = await _storage.getUserEmail();
           final profile = ProfileUser.fromJson(data);
+          final safeEmail = profile.email.trim().isNotEmpty ? profile.email : (currentEmail ?? '');
           await _storage.setUserName(value: profile.name);
-          await _storage.setUserEmail(email: profile.email);
-          return profile;
+          await _storage.setUserEmail(email: safeEmail);
+          return ProfileUser(name: profile.name, email: safeEmail);
         }
       }
 
       throw const ProfileException('No se pudo actualizar el nombre');
+    } on TimeoutException {
+      throw const ProfileException('Sin conexión. Intenta nuevamente');
+    } on http.ClientException {
+      throw const ProfileException('Sin conexión. Intenta nuevamente');
+    }
+  }
+
+  @override
+  Future<ProfileUser> updatePassword({required String currentPassword, required String newPassword}) async {
+    final token = await _session.readToken();
+    if (token == null || token.trim().isEmpty) {
+      throw const ProfileException('No hay sesión activa');
+    }
+
+    try {
+      final response = await _client
+          .put(
+            Uri.parse(ApiConstants.profilePasswordUpdate),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'currentPassword': currentPassword,
+              'newPassword': newPassword,
+            }),
+          )
+          .timeout(ApiConstants.connectTimeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          final currentEmail = await _storage.getUserEmail();
+          final profile = ProfileUser.fromJson(data);
+          final safeEmail = profile.email.trim().isNotEmpty ? profile.email : (currentEmail ?? '');
+          await _storage.setUserName(value: profile.name);
+          await _storage.setUserEmail(email: safeEmail);
+          return ProfileUser(name: profile.name, email: safeEmail);
+        }
+      }
+
+      throw const ProfileException('No se pudo actualizar la contraseña');
     } on TimeoutException {
       throw const ProfileException('Sin conexión. Intenta nuevamente');
     } on http.ClientException {

@@ -82,8 +82,42 @@ class ProfileProvider extends ChangeNotifier {
 
     try {
       final updated = await _repository.updateName(name: trimmed);
-      _name = updated.name;
-      _email = updated.email;
+      _name = updated.name.trim().isNotEmpty ? updated.name : trimmed;
+      _email = updated.email.trim().isNotEmpty ? updated.email : _email;
+      await _storage.setUserName(value: _name);
+      await _storage.setUserEmail(email: _email);
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updatePassword({required String currentPassword, required String newPassword}) async {
+    if (currentPassword.trim().isEmpty || newPassword.trim().isEmpty) {
+      _errorMessage = 'Completa ambas contraseñas.';
+      notifyListeners();
+      return false;
+    }
+
+    if (newPassword.length < 8) {
+      _errorMessage = 'La nueva contraseña debe tener al menos 8 caracteres.';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _repository.updatePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
       return true;
     } catch (e) {
       _errorMessage = e.toString();
