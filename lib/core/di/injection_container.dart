@@ -16,9 +16,9 @@ Future<void> initDependencies() async {
   getIt.registerLazySingleton<ConnectivityService>(() => ConnectivityService());
 
   initAuthDependencies(getIt);
+  initParcelaDependencies(getIt);
   initBitacoraDependencies(getIt);
   initHomeDependencies(getIt);
   initOnboardingDependencies(getIt);
-  initParcelaDependencies(getIt);
   initProfileDependencies(getIt);
 }

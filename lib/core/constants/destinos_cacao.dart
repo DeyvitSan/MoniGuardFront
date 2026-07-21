@@ -1,6 +1,6 @@
 class DestinoCacao {
   final String nombre;
-  final String region; // "Soconusco" o "Norte"
+  final String region;
   final double lat;
   final double lng;
 

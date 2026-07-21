@@ -1,12 +1,10 @@
-// lib/core/constants/api_constants.dart
-
 abstract final class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.0.123:3000/api/v1',
+    defaultValue: 'http://10.254.52.77:3000/api/v1',
   );
 
-  // ── Endpoints ──────────────────────────────────────────────────────────────
+  //Endpoints
   static const String login    = '$baseUrl/auth/login';
   static const String register = '$baseUrl/auth/register';
   static const String profileMe = '$baseUrl/profile/me';
@@ -19,7 +17,7 @@ abstract final class ApiConstants {
   static const String dashboardSummary = '$baseUrl/dashboard/summary';
 
 
-  // ── Timeouts ───────────────────────────────────────────────────────────────
+  //Timeouts
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 15);
 }

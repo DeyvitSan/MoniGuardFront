@@ -1,4 +1,3 @@
-// features/home/presentation/pages/home_page.dart
 // Pantalla principal de MoniGuard — Dashboard.
 // Presentación pura: delega toda la lógica a HomeProvider.
 // BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil.

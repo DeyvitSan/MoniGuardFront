@@ -1,4 +1,3 @@
-// core/session/session_service.dart
 // Única fuente de verdad para el token JWT. El login guarda el token aquí una
 // sola vez; el resto de la app lo LEE de aquí, nunca se pasa por constructores.
 // Esto elimina la clase de bug "se me olvidó pasar el accessToken" que provocaba

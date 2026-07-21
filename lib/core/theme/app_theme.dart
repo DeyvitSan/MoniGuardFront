@@ -8,7 +8,7 @@ abstract final class AppColors {
   static const Color cacaoMid     = Color(0xFF6D4C41);
   static const Color cacaoLight   = Color(0xFFBCAAA4);
 
-  //Secundario — Verde Bosque
+  //Secundario - Verde Bosque
   static const Color forestDeep   = Color(0xFF2E7D32);
   static const Color forestMid    = Color(0xFF388E3C);
 
@@ -37,7 +37,7 @@ abstract final class AppColors {
 //Tokens forma
 abstract final class AppShapes {
   static const double radiusSm  = 12.0;
-  static const double radiusMd  = 24.0;  //estándar componentes
+  static const double radiusMd  = 24.0;
   static const double radiusLg  = 32.0;
   static const double radiusXl  = 40.0;
 

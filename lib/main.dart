@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/di/injection_container.dart';
 import 'core/theme/app_theme.dart';
@@ -16,6 +18,7 @@ Future<void> main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
 
+  await initializeDateFormatting('es');
   await initDependencies();
 
   final storageService = getIt<LocalStorageService>();
@@ -40,6 +43,17 @@ class MoniGuardApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es', 'MX'),
+        Locale('es'),
+        Locale('en'),
+      ],
+      locale: const Locale('es', 'MX'),
       home: hasSeenOnboarding ? _loginPage() : _onboardingPage(),
     );
   }
@@ -50,7 +64,7 @@ class MoniGuardApp extends StatelessWidget {
 
   Widget _loginPage() => LoginPage(
     onLoginSuccess: (ctx) async {
-      // Tras login, decide si manda a configurar parcela o directo a Home.
+      //login, decide si manda a configurar parcela o directo a Home.
       final tieneParcela = await getIt<ParcelaRepository>().tieneParcela();
       if (!ctx.mounted) return;
 

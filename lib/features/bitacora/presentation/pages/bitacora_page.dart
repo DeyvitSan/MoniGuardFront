@@ -1,13 +1,16 @@
-// Flujo: seleccionar destino → consultar clima → redactar → guardar local → sincronizar.
-// Sincronización automática: al abrir, al recuperar conexión y al volver del background.
+// Flujo: la parcela y el clima se cargan automático al abrir (ya no se
+// pregunta destino). El usuario solo elige fecha + estado observado +
+// texto opcional. Sincronización automática: al abrir, al recuperar
+// conexión y al volver del background.
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/constants/destinos_cacao.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/network/connectivity_service.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/entities/bitacora.dart';
 import '../provider/bitacora_provider.dart';
 
 class BitacoraPage extends StatelessWidget {
@@ -17,9 +20,6 @@ class BitacoraPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ChangeNotifierProvider crea el provider UNA vez y se encarga de
-    // llamar dispose() automáticamente cuando este widget sale del árbol.
-    // Antes eso lo hacías a mano en dispose().
     return ChangeNotifierProvider<BitacoraProvider>(
       create: (_) => getIt<BitacoraProvider>(),
       child: _BitacoraView(onSessionExpired: onSessionExpired),
@@ -49,16 +49,20 @@ class _BitacoraViewState extends State<_BitacoraView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // context.read() (no watch) porque solo necesitamos la referencia,
-    // no queremos que initState se re-ejecute en cada notifyListeners().
     _ctrl = context.read<BitacoraProvider>();
     _ctrl.addListener(_onControllerChanged);
 
-    _ctrl.cargarPendientes();
-    _ctrl.syncIfPending();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ctrl.cargarParcela();
+      _ctrl.cargarPendientes();
+      _ctrl.syncIfPending();
+    });
 
     _connSub = _connectivity.onConnectionChanged.listen((online) {
-      if (online) _ctrl.syncIfPending();
+      if (online) {
+        _ctrl.syncIfPending();
+        _ctrl.consultarClima();
+      }
     });
   }
 
@@ -84,16 +88,25 @@ class _BitacoraViewState extends State<_BitacoraView>
     _connSub?.cancel();
     _ctrl.removeListener(_onControllerChanged);
     _textoCtrl.dispose();
-    // Ya NO llamamos _ctrl.dispose() — ChangeNotifierProvider lo hace solo.
     super.dispose();
+  }
+
+  Future<void> _elegirFecha(BuildContext context, BitacoraProvider ctrl) async {
+    final ahora = DateTime.now();
+    final elegida = await showDatePicker(
+      context: context,
+      initialDate: ctrl.fechaObservacion,
+      firstDate: ahora.subtract(const Duration(days: 30)),
+      lastDate: ahora,
+      locale: const Locale('es'),
+    );
+    if (elegida != null) ctrl.seleccionarFecha(elegida);
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // Consumer reemplaza AnimatedBuilder: escucha automáticamente y
-    // solo repinta este subárbol cuando BitacoraProvider notifica.
     return Consumer<BitacoraProvider>(
       builder: (context, ctrl, _) {
         return SafeArea(
@@ -104,21 +117,20 @@ class _BitacoraViewState extends State<_BitacoraView>
                   style: AppTypography.playfair(size: 24, color: cs.onSurface)),
               const SizedBox(height: 4),
               Text(
-                'Selecciona el destino antes de salir para registrar el clima de referencia.',
+                'Registra lo que observas en tu parcela hoy.',
                 style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
               ),
               const SizedBox(height: 20),
 
               if (ctrl.sesionExpirada) _buildAuthErrorBanner(cs, ctrl),
 
-              _buildSelectorDestino(cs, ctrl),
-              const SizedBox(height: 16),
+              _buildParcelaSection(cs, ctrl),
 
-              if (ctrl.destino != null) _buildClimaSection(cs, ctrl),
-
-              if (ctrl.climaListo) ...[
+              if (ctrl.parcelaCargaStatus == ParcelaCargaStatus.success) ...[
+                const SizedBox(height: 16),
+                _buildClimaSection(cs, ctrl),
                 const SizedBox(height: 20),
-                _buildFormularioTexto(cs, ctrl),
+                _buildFormulario(cs, ctrl),
               ],
 
               const SizedBox(height: 32),
@@ -158,40 +170,44 @@ class _BitacoraViewState extends State<_BitacoraView>
     );
   }
 
-  Widget _buildSelectorDestino(ColorScheme cs, BitacoraProvider ctrl) {
+  Widget _buildParcelaSection(ColorScheme cs, BitacoraProvider ctrl) {
+    if (ctrl.parcelaCargaStatus == ParcelaCargaStatus.loading ||
+        ctrl.parcelaCargaStatus == ParcelaCargaStatus.idle) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (ctrl.parcelaCargaStatus == ParcelaCargaStatus.failure) {
+      return Card(
+        color: cs.errorContainer,
+        shape: AppShapes.cardShape,
+        child: ListTile(
+          leading: Icon(Icons.error_outline_rounded, color: cs.onErrorContainer),
+          title: Text(ctrl.parcelaError ?? 'Error',
+              style: TextStyle(color: cs.onErrorContainer)),
+          trailing: IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: ctrl.cargarParcela,
+          ),
+        ),
+      );
+    }
+
+    final parcela = ctrl.parcela!;
     return Card(
       shape: AppShapes.cardShape,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: DropdownButtonFormField<DestinoCacao>(
-          initialValue: ctrl.destino,
-          decoration: const InputDecoration(
-            labelText: 'Destino de evaluación',
-            border: InputBorder.none,
-          ),
-          items: DestinosCacao.lista.map((d) {
-            return DropdownMenuItem(
-              value: d,
-              child: Text('${d.nombre} · ${d.region}'),
-            );
-          }).toList(),
-          onChanged: (d) {
-            if (d != null) ctrl.seleccionarDestino(d);
-          },
-        ),
+      child: ListTile(
+        leading: Icon(Icons.landscape_rounded, color: cs.secondary),
+        title: Text(parcela.nombre,
+            style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(parcela.ubicacion),
       ),
     );
   }
 
   Widget _buildClimaSection(ColorScheme cs, BitacoraProvider ctrl) {
-    if (ctrl.climaStatus == ClimaStatus.idle) {
-      return FilledButton.icon(
-        onPressed: ctrl.consultarClima,
-        icon: const Icon(Icons.cloud_download_outlined),
-        label: const Text('Consultar clima antes de salir'),
-      );
-    }
-
     if (ctrl.climaStatus == ClimaStatus.loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -201,8 +217,7 @@ class _BitacoraViewState extends State<_BitacoraView>
         color: cs.errorContainer,
         shape: AppShapes.cardShape,
         child: ListTile(
-          leading:
-          Icon(Icons.error_outline_rounded, color: cs.onErrorContainer),
+          leading: Icon(Icons.cloud_off_rounded, color: cs.onErrorContainer),
           title: Text(ctrl.climaError ?? 'Error',
               style: TextStyle(color: cs.onErrorContainer)),
           trailing: IconButton(
@@ -213,54 +228,122 @@ class _BitacoraViewState extends State<_BitacoraView>
       );
     }
 
-    final clima = ctrl.clima!;
+    final clima = ctrl.clima;
+    if (clima == null) return const SizedBox.shrink();
+
+    // Si el clima consultado ahora mismo trajo error pero teníamos uno
+    // previo cacheado, se sigue mostrando marcado como "último conocido".
+    final esUltimoConocido = ctrl.climaObtenidoEn != null &&
+        DateTime.now().difference(ctrl.climaObtenidoEn!) > const Duration(minutes: 2);
+
     return Card(
       color: cs.secondaryContainer,
       shape: AppShapes.cardShape,
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: Column(
           children: [
-            _ClimaChip(
-                icon: Icons.thermostat_rounded,
-                label: '${clima.temperatura.toStringAsFixed(1)}°C'),
-            _ClimaChip(
-                icon: Icons.water_drop_outlined,
-                label: '${clima.humedad.toStringAsFixed(0)}%'),
-            _ClimaChip(
-                icon: Icons.umbrella_outlined,
-                label: '${clima.precipitacion.toStringAsFixed(1)}mm'),
+            if (esUltimoConocido)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Icon(Icons.history_rounded,
+                        size: 16, color: cs.onSecondaryContainer),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Último clima conocido (sin conexión ahora)',
+                      style: TextStyle(
+                          fontSize: 11.5, color: cs.onSecondaryContainer),
+                    ),
+                  ],
+                ),
+              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _ClimaChip(
+                    icon: Icons.thermostat_rounded,
+                    label: '${clima.temperatura.toStringAsFixed(1)}°C'),
+                _ClimaChip(
+                    icon: Icons.water_drop_outlined,
+                    label: '${clima.humedad.toStringAsFixed(0)}%'),
+                _ClimaChip(
+                    icon: Icons.umbrella_outlined,
+                    label: '${clima.precipitacion.toStringAsFixed(1)}mm'),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFormularioTexto(ColorScheme cs, BitacoraProvider ctrl) {
+  Widget _buildFormulario(ColorScheme cs, BitacoraProvider ctrl) {
     final guardando = ctrl.guardadoStatus == GuardadoStatus.guardando;
     final guardado = ctrl.guardadoStatus == GuardadoStatus.guardado;
+    final puedeGuardar = ctrl.estadoSeleccionado != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text('¿Qué observaste hoy?',
+            style: TextStyle(
+                fontWeight: FontWeight.w600, color: cs.onSurface, fontSize: 15)),
+        const SizedBox(height: 10),
+
+        // Selector de fecha
+        Card(
+          shape: AppShapes.cardShape,
+          child: ListTile(
+            leading: Icon(Icons.calendar_today_rounded, color: cs.secondary),
+            title: const Text('Fecha de observación'),
+            subtitle: Text(
+              DateFormat('EEEE d MMMM yyyy', 'es').format(ctrl.fechaObservacion),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => _elegirFecha(context, ctrl),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Chips de estado
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: EstadoMazorca.values.map((estado) {
+            final seleccionado = ctrl.estadoSeleccionado == estado;
+            return ChoiceChip(
+              label: Text(estado.label),
+              selected: seleccionado,
+              onSelected: (_) => ctrl.seleccionarEstado(estado),
+              selectedColor: _colorEstado(estado, cs),
+              labelStyle: TextStyle(
+                color: seleccionado ? cs.onPrimary : cs.onSurface,
+                fontWeight: seleccionado ? FontWeight.w700 : FontWeight.w400,
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+
         TextField(
           controller: _textoCtrl,
-          maxLines: 5,
+          maxLines: 4,
           decoration: const InputDecoration(
-            labelText: 'Observaciones de campo',
-            hintText:
-            'Describe el estado de la parcela, frutos, hojas, humedad visible...',
+            labelText: 'Notas adicionales (opcional)',
+            hintText: 'Detalles extra que quieras registrar...',
             alignLabelWithHint: true,
             border: OutlineInputBorder(),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
+
         FilledButton.icon(
-          onPressed: guardando
+          onPressed: (guardando || !puedeGuardar)
               ? null
               : () async {
-            final ok = await ctrl.guardarBitacora(_textoCtrl.text);
+            final ok = await ctrl.guardarBitacora(texto: _textoCtrl.text);
             if (ok && mounted) {
               _textoCtrl.clear();
               ctrl.resetFormulario();
@@ -268,21 +351,24 @@ class _BitacoraViewState extends State<_BitacoraView>
               await ctrl.syncIfPending();
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Bitácora guardada localmente')),
+                  const SnackBar(content: Text('Bitácora guardada localmente')),
                 );
               }
             }
           },
           icon: guardando
               ? const SizedBox(
-              width: 16,
-              height: 16,
+              width: 16, height: 16,
               child: CircularProgressIndicator(strokeWidth: 2))
               : const Icon(Icons.lock_outline_rounded),
-          label: Text(
-              guardando ? 'Guardando...' : 'Guardar bitácora (cifrada local)'),
+          label: Text(guardando ? 'Guardando...' : 'Guardar bitácora (cifrada local)'),
         ),
+        if (!puedeGuardar)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text('Selecciona un estado para poder guardar.',
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+          ),
         if (guardado)
           const Padding(
             padding: EdgeInsets.only(top: 8),
@@ -290,6 +376,19 @@ class _BitacoraViewState extends State<_BitacoraView>
           ),
       ],
     );
+  }
+
+  Color _colorEstado(EstadoMazorca estado, ColorScheme cs) {
+    switch (estado) {
+      case EstadoMazorca.sinSintomas:
+        return AppColors.forestDeep;
+      case EstadoMazorca.manchasLeves:
+        return AppColors.warning;
+      case EstadoMazorca.manchasExtendidas:
+        return const Color(0xFFE65100);
+      case EstadoMazorca.pudricionVisible:
+        return cs.error;
+    }
   }
 
   Widget _buildPendientesSection(ColorScheme cs, BitacoraProvider ctrl) {
@@ -323,8 +422,7 @@ class _BitacoraViewState extends State<_BitacoraView>
                   : () => ctrl.sincronizar(),
               icon: syncing
                   ? const SizedBox(
-                  width: 14,
-                  height: 14,
+                  width: 14, height: 14,
                   child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.sync_rounded, size: 18),
               label: Text(syncing ? 'Sincronizando...' : 'Sincronizar'),
@@ -349,8 +447,11 @@ class _BitacoraViewState extends State<_BitacoraView>
             child: ListTile(
               leading: const Icon(Icons.lock_clock_outlined),
               title: Text(b.destino),
-              subtitle: Text(b.texto,
-                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Text(
+                b.estadoMazorca?.label ?? (b.texto ?? 'Sin detalle'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           )),
       ],
