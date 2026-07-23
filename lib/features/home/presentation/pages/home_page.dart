@@ -1,6 +1,6 @@
 // Pantalla principal de MoniGuard — Dashboard.
 // Presentación pura: delega toda la lógica a HomeProvider.
-// BottomNavigationBar con 3 tabs: Inicio · Bitácoras · Perfil.
+// BottomNavigationBar con 4 tabs: Inicio · Diagnóstico · Bitácoras · Perfil.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../analisis/presentation/pages/analisis_page.dart';
 import '../../../bitacora/presentation/pages/bitacora_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
 import '../provider/home_provider.dart';
@@ -45,6 +46,7 @@ class _HomeView extends StatelessWidget {
             index: ctrl.tabIndex,
             children: [
               _DashboardTab(ctrl: ctrl),
+              const AnalisisPage(),
               BitacoraPage(
                 onSessionExpired: () {
                   Navigator.of(context).pushReplacementNamed('/login');
@@ -64,6 +66,11 @@ class _HomeView extends StatelessWidget {
                 icon:          Icon(Icons.dashboard_outlined),
                 selectedIcon:  Icon(Icons.dashboard_rounded),
                 label:         'Inicio',
+              ),
+              NavigationDestination(
+                icon:          Icon(Icons.analytics_outlined),
+                selectedIcon:  Icon(Icons.analytics_rounded),
+                label:         'Diagnóstico',
               ),
               NavigationDestination(
                 icon:          Icon(Icons.edit_note_outlined),

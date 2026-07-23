@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import '../../features/analisis/di/injection_analisis.dart';
 import '../../features/auth/di/injection_auth.dart';
 import '../../features/bitacora/di/injection_bitacora.dart';
 import '../../features/home/di/injection_home.dart';
@@ -19,6 +20,7 @@ Future<void> initDependencies() async {
   initParcelaDependencies(getIt);
   initBitacoraDependencies(getIt);
   initHomeDependencies(getIt);
+  initAnalisisDependencies(getIt);
   initOnboardingDependencies(getIt);
   initProfileDependencies(getIt);
 }
