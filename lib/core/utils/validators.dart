@@ -12,13 +12,31 @@ abstract final class AppValidators {
     }
     return null;
   }
-  // Por defecto: 8 caracteres (OWASP mínimo recomendado).
+  // Mínimo 8 caracteres (OWASP) + mayúscula, minúscula y número.
+  // Debe coincidir con la política validada en el backend
+  // (api-gateway/src/auth/dto/gateway-auth.dto.ts) — la validación de
+  // cliente es solo para dar feedback rápido, nunca la única barrera.
+  static final RegExp _passwordComplexity =
+      RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$');
+
   static String? password(String? value, {int minLength = 8}) {
     if (value == null || value.isEmpty) {
       return 'La contraseña es obligatoria';
     }
     if (value.length < minLength) {
       return 'Mínimo $minLength caracteres';
+    }
+    if (!_passwordComplexity.hasMatch(value)) {
+      return 'Debe incluir mayúscula, minúscula y número';
+    }
+    return null;
+  }
+
+  // Para el formulario de login NO se exige complejidad — solo que no esté
+  // vacío. Evita bloquear el acceso a cuentas creadas antes de esta regla.
+  static String? loginPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'La contraseña es obligatoria';
     }
     return null;
   }
