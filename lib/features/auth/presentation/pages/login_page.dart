@@ -306,7 +306,7 @@ class _PasswordField extends StatelessWidget {
       autocorrect: false,
       enableSuggestions: false,
       autofillHints: const [AutofillHints.password],
-      validator: AppValidators.password,
+      validator: AppValidators.loginPassword,
       decoration: InputDecoration(
         labelText: 'Contraseña',
         hintText: '••••••••',
