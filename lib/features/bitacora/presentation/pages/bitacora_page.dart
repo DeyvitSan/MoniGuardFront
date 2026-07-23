@@ -330,11 +330,32 @@ class _BitacoraViewState extends State<_BitacoraView>
         TextField(
           controller: _textoCtrl,
           maxLines: 4,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Notas adicionales (opcional)',
-            hintText: 'Detalles extra que quieras registrar...',
+            hintText: 'Describe el estado de la parcela, frutos, hojas...',
             alignLabelWithHint: true,
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
+            suffixIcon: IconButton(
+              icon: Icon(
+                ctrl.dictando ? Icons.mic_rounded : Icons.mic_none_rounded,
+                color: ctrl.dictando ? cs.error : cs.secondary,
+              ),
+              tooltip: ctrl.dictando ? 'Detener dictado' : 'Dictar por voz',
+              onPressed: () {
+                if (ctrl.dictando) {
+                  ctrl.detenerDictado();
+                } else {
+                  ctrl.iniciarDictado((texto) {
+                    setState(() {
+                      _textoCtrl.text = texto;
+                      _textoCtrl.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _textoCtrl.text.length),
+                      );
+                    });
+                  });
+                }
+              },
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -413,9 +434,11 @@ class _BitacoraViewState extends State<_BitacoraView>
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Pendientes de sincronizar (${pendientes.length})',
+            Expanded(
+              child: Text('Pendientes de sincronizar (${pendientes.length})',
                 style: TextStyle(
                     fontWeight: FontWeight.w600, color: cs.onSurface)),
+            ),
             TextButton.icon(
               onPressed: (pendientes.isEmpty || syncing)
                   ? null

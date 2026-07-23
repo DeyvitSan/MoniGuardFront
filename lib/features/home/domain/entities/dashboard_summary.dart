@@ -84,11 +84,73 @@ class RiesgoData {
   );
 }
 
+// Análisis combinado (clima + evidencia de campo)
+@immutable
+class FuenteClima {
+  final NivelRiesgo nivel;
+  final double peso;
+
+  const FuenteClima({required this.nivel, required this.peso});
+
+  factory FuenteClima.fromJson(Map<String, dynamic> j) => FuenteClima(
+    nivel: NivelRiesgoX.fromString(j['nivel'] as String),
+    peso:  (j['peso'] as num).toDouble(),
+  );
+}
+
+@immutable
+class FuenteCampo {
+  final String? etiquetaPredominante;
+  final double peso;
+  final int bitacorasAnalizadas;
+
+  const FuenteCampo({
+    this.etiquetaPredominante,
+    required this.peso,
+    required this.bitacorasAnalizadas,
+  });
+
+  factory FuenteCampo.fromJson(Map<String, dynamic> j) => FuenteCampo(
+    etiquetaPredominante: j['etiquetaPredominante'] as String?,
+    peso: (j['peso'] as num).toDouble(),
+    bitacorasAnalizadas: j['bitacorasAnalizadas'] as int,
+  );
+}
+
+@immutable
+class AnalisisCombinado {
+  final NivelRiesgo veredicto;
+  final int porcentaje;
+  final String recomendacion;
+  final FuenteClima fuenteClima;
+  final FuenteCampo fuenteCampo;
+
+  const AnalisisCombinado({
+    required this.veredicto,
+    required this.porcentaje,
+    required this.recomendacion,
+    required this.fuenteClima,
+    required this.fuenteCampo,
+  });
+
+  factory AnalisisCombinado.fromJson(Map<String, dynamic> j) {
+    final fuentes = j['fuentes'] as Map<String, dynamic>;
+    return AnalisisCombinado(
+      veredicto: NivelRiesgoX.fromString(j['veredicto'] as String),
+      porcentaje: j['porcentaje'] as int,
+      recomendacion: j['recomendacion'] as String,
+      fuenteClima: FuenteClima.fromJson(fuentes['clima'] as Map<String, dynamic>),
+      fuenteCampo: FuenteCampo.fromJson(fuentes['campo'] as Map<String, dynamic>),
+    );
+  }
+}
+
 @immutable
 class DashboardSummary {
   final ParcelaInfo parcela;
   final ClimaData   clima;
   final RiesgoData  riesgo;
+  final AnalisisCombinado? analisisCombinado;
   final int         alertasActivas;
   final DateTime?   ultimaBitacora;
 
@@ -96,6 +158,7 @@ class DashboardSummary {
     required this.parcela,
     required this.clima,
     required this.riesgo,
+    this.analisisCombinado,
     required this.alertasActivas,
     this.ultimaBitacora,
   });
@@ -104,6 +167,9 @@ class DashboardSummary {
     parcela:        ParcelaInfo.fromJson(j['parcela'] as Map<String, dynamic>),
     clima:          ClimaData.fromJson(j['clima']    as Map<String, dynamic>),
     riesgo:         RiesgoData.fromJson(j['riesgo']  as Map<String, dynamic>),
+    analisisCombinado: j['analisisCombinado'] != null
+        ? AnalisisCombinado.fromJson(j['analisisCombinado'] as Map<String, dynamic>)
+        : null,
     alertasActivas: j['alertasActivas'] as int,
     ultimaBitacora: j['ultimaBitacora'] != null
         ? DateTime.parse(j['ultimaBitacora'] as String)

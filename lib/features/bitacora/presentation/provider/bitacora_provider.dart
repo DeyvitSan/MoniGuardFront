@@ -5,6 +5,8 @@ import '../../../parcela/domain/parcela_repository.dart';
 import '../../domain/bitacora_repository.dart';
 import '../../domain/entities/bitacora.dart';
 import '../../domain/entities/clima_previo.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+
 
 enum ParcelaCargaStatus { idle, loading, success, failure }
 
@@ -222,5 +224,53 @@ class BitacoraProvider extends ChangeNotifier {
     await cargarPendientes();
     if (_pendientes.isEmpty) return;
     await sincronizar();
+  }
+
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _dictando = false;
+  bool get dictando => _dictando;
+  bool _speechDisponible = false;
+
+  Future<bool> inicializarDictado() async {
+    _speechDisponible = await _speech.initialize(
+      onError: (error) {
+        _dictando = false;
+        notifyListeners();
+      },
+      onStatus: (status) {
+        if (status == 'done' || status == 'notListening') {
+          _dictando = false;
+          notifyListeners();
+        }
+      },
+    );
+    return _speechDisponible;
+  }
+
+  // [onResultado] recibe el texto reconocido para que la UI lo ponga en el TextField.
+  Future<void> iniciarDictado(void Function(String texto) onResultado) async {
+    if (!_speechDisponible) {
+      final ok = await inicializarDictado();
+      if (!ok) return;
+    }
+
+    _dictando = true;
+    notifyListeners();
+
+    await _speech.listen(
+      onResult: (result) {
+        onResultado(result.recognizedWords);
+      },
+      listenOptions: stt.SpeechListenOptions(
+        localeId: 'es_MX',
+        listenMode: stt.ListenMode.confirmation,
+      ),
+    );
+  }
+
+  void detenerDictado() {
+    _speech.stop();
+    _dictando = false;
+    notifyListeners();
   }
 }
