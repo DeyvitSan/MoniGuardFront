@@ -265,12 +265,29 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildParcelaSection(BuildContext context) {
+    final hectareas = controller.parcelaHectareas;
     return _sectionCard(children: [
       _infoTile(
         context,
         icon: Icons.landscape_outlined,
         label: 'Parcela',
         value: controller.parcelaNombre ?? 'Sin parcela registrada',
+      ),
+      const Divider(height: 1, indent: 68),
+      _infoTile(
+        context,
+        icon: Icons.place_outlined,
+        label: 'Ubicación',
+        value: controller.parcelaUbicacion ?? 'No registrada',
+      ),
+      const Divider(height: 1, indent: 68),
+      _infoTile(
+        context,
+        icon: Icons.crop_square_outlined,
+        label: 'Tamaño',
+        value: hectareas != null
+            ? '${hectareas.toStringAsFixed(hectareas == hectareas.roundToDouble() ? 0 : 1)} ha'
+            : 'No registrado',
       ),
     ]);
   }
@@ -313,6 +330,14 @@ class _ProfilePageState extends State<ProfilePage> {
             controller.errorMessage!,
             style: TextStyle(color: theme.colorScheme.error),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton.icon(
+              onPressed: controller.loadProfile,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Reintentar'),
+            ),
           ),
         ],
         _sectionLabel(context, 'Cuenta'),

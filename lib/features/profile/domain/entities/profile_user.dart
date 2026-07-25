@@ -6,12 +6,16 @@ class ProfileUser {
   final String email;
   final String? passwordHash;
   final String? parcelaNombre;
+  final String? parcelaUbicacion;
+  final double? parcelaHectareas;
 
   const ProfileUser({
     required this.name,
     required this.email,
     this.passwordHash,
     this.parcelaNombre,
+    this.parcelaUbicacion,
+    this.parcelaHectareas,
   });
 
   factory ProfileUser.fromJson(Map<String, dynamic> json) => ProfileUser(
@@ -19,6 +23,8 @@ class ProfileUser {
     email: (json['email'] ?? '').toString(),
     passwordHash: json['passwordHash']?.toString(),
     parcelaNombre: json['parcelaNombre']?.toString(),
+    parcelaUbicacion: json['parcelaUbicacion']?.toString(),
+    parcelaHectareas: (json['parcelaHectareas'] as num?)?.toDouble(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -26,5 +32,7 @@ class ProfileUser {
     'email': email,
     'passwordHash': passwordHash,
     'parcelaNombre': parcelaNombre,
+    'parcelaUbicacion': parcelaUbicacion,
+    'parcelaHectareas': parcelaHectareas,
   };
 }

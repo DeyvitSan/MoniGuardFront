@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../../../core/session/session_service.dart';
 import '../../../onboarding/data/repositories/local_storage_service_impl.dart';
 import '../../../onboarding/domain/local_storage_service.dart';
+import '../../domain/entities/profile_user.dart';
 import '../../domain/profile_repository.dart';
 
 class ProfileProvider extends ChangeNotifier {
@@ -22,6 +23,8 @@ class ProfileProvider extends ChangeNotifier {
   String _email = 'Sin correo';
   String? _passwordHash;
   String? _parcelaNombre;
+  String? _parcelaUbicacion;
+  double? _parcelaHectareas;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -29,6 +32,8 @@ class ProfileProvider extends ChangeNotifier {
   String get email => _email;
   String? get passwordHash => _passwordHash;
   String? get parcelaNombre => _parcelaNombre;
+  String? get parcelaUbicacion => _parcelaUbicacion;
+  double? get parcelaHectareas => _parcelaHectareas;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -54,20 +59,30 @@ class ProfileProvider extends ChangeNotifier {
         _email = cachedEmail.trim();
       }
 
-      final profile = await _repository.getProfile();
+      ProfileUser profile;
+      try {
+        profile = await _repository.getProfile();
+      } on ProfileException {
+        // Un solo reintento — cubre el hiccup momentáneo típico justo al
+        // abrir la pantalla (arranque en frío del backend, blip de red).
+        profile = await _repository.getProfile();
+      }
       _name = profile.name;
       _email = profile.email;
       _passwordHash = profile.passwordHash;
       _parcelaNombre = profile.parcelaNombre;
+      _parcelaUbicacion = profile.parcelaUbicacion;
+      _parcelaHectareas = profile.parcelaHectareas;
       await _storage.setUserName(value: _name);
       await _storage.setUserEmail(email: _email);
+    } on ProfileException catch (e) {
+      // Ya con el reintento fallido: esto sí se muestra. Antes se
+      // descartaba en silencio y la pantalla se quedaba con el nombre en
+      // caché sin avisar que algo falló — la única forma de "arreglarlo"
+      // era forzar un logout/login que reconstruyera la pantalla entera.
+      _errorMessage = e.message;
     } catch (e) {
-      final message = e.toString();
-      if (message.contains('ProfileException')) {
-        _errorMessage = null;
-      } else {
-        _errorMessage = message;
-      }
+      _errorMessage = e.toString();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -92,6 +107,8 @@ class ProfileProvider extends ChangeNotifier {
       _email = updated.email;
       _passwordHash = updated.passwordHash;
       _parcelaNombre = updated.parcelaNombre;
+      _parcelaUbicacion = updated.parcelaUbicacion;
+      _parcelaHectareas = updated.parcelaHectareas;
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -113,6 +130,8 @@ class ProfileProvider extends ChangeNotifier {
       _email = 'Sin correo';
       _passwordHash = null;
       _parcelaNombre = null;
+      _parcelaUbicacion = null;
+      _parcelaHectareas = null;
       _errorMessage = null;
     } catch (e) {
       debugPrint('profile logout error: $e');

@@ -2,7 +2,8 @@
 // Pantalla dedicada al diagnóstico real de MoniGuard: combina el riesgo
 // climático (predicción anticipada) con la evidencia de campo reciente
 // (análisis de texto de bitácoras), y presenta un veredicto único con
-// su razonamiento — no es un extra, es el corazón de la app.
+// su razonamiento — no es un extra, es el coraz
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:pdf/pdf.dart';
@@ -300,14 +301,42 @@ class _AnalisisView extends StatelessWidget {
       width: double.infinity,
       height: 52,
       child: OutlinedButton.icon(
-        onPressed: () => _exportarPdf(summary, analisis),
+        onPressed: () => _verPdf(context,summary, analisis),
         icon: const Icon(Icons.picture_as_pdf_outlined),
         label: const Text('Exportar diagnóstico (PDF)'),
       ),
     );
   }
 
-  Future<void> _exportarPdf(DashboardSummary summary, AnalisisCombinado analisis) async {
+  Future<void> _verPdf(
+      BuildContext context,
+      DashboardSummary summary,
+      AnalisisCombinado analisis,
+      ) async {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text('Diagnóstico en PDF')),
+          // PdfPreview ya trae su propia barra de acciones con
+          // "compartir" e "imprimir" (que en Android/iOS incluye
+          // "Guardar como PDF") — el usuario ve el documento primero y
+          // decide qué hacer con él, en vez de saltar directo al share
+          // sheet del sistema.
+          body: PdfPreview(
+            build: (format) => _construirPdfBytes(summary, analisis),
+            allowPrinting: true,
+            allowSharing: true,
+            canChangePageFormat: false,
+            canChangeOrientation: false,
+            pdfFileName: 'diagnostico_moniguard.pdf',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<Uint8List> _construirPdfBytes(
+      DashboardSummary summary, AnalisisCombinado analisis) async {
     final doc = pw.Document();
 
     final colorCacao = PdfColor.fromHex('#3E2723');
@@ -488,10 +517,7 @@ class _AnalisisView extends StatelessWidget {
       ),
     );
 
-    await Printing.sharePdf(
-      bytes: await doc.save(),
-      filename: 'diagnostico_moniguard.pdf',
-    );
+    return doc.save();
   }
 
   pw.Widget _filaFuentePdf({
