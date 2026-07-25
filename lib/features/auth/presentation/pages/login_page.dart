@@ -157,16 +157,16 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          width: 72,
-          height: 72,
+          width: 88,
+          height: 88,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: colorScheme.secondaryContainer,
           ),
-          child: Icon(
-            Icons.eco_rounded,
-            size: 36,
-            color: colorScheme.secondary,
+          padding: const EdgeInsets.all(14),
+          child: Image.asset(
+            'assets/images/logo_login.png',
+            fit: BoxFit.contain,
           ),
         ),
         const SizedBox(height: 20),

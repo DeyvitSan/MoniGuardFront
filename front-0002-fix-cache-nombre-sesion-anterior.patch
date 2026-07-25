@@ -1,0 +1,87 @@
+From e71d9c1b91945ddd6cdf9ec25a1ff1dd42c61191 Mon Sep 17 00:00:00 2001
+From: "Claude (Jou's assistant)" <noreply@anthropic.com>
+Date: Sat, 25 Jul 2026 01:19:05 +0000
+Subject: [PATCH] =?UTF-8?q?fix:=20nombre/correo=20de=20la=20cuenta=20anter?=
+ =?UTF-8?q?ior=20se=20quedaban=20cacheados=20al=20cambiar=20de=20sesi?=
+ =?UTF-8?q?=C3=B3n?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+LocalStorageService (SharedPreferences) guarda nombre/correo del
+usuario para mostrarlo rápido sin esperar la red. Ese caché solo se
+limpiaba en logout explícito — si alguien iniciaba sesión con OTRA
+cuenta sin cerrar sesión primero, el nombre/correo de la cuenta
+anterior seguía apareciendo hasta que /profile/me lo corregía (ej. al
+entrar a Perfil) o hasta el próximo logout/login.
+
+Ahora LoginProvider.signIn() limpia nombre/correo cacheados en cuanto
+el login es exitoso, antes de guardar el token nuevo — así la sesión
+nueva nunca alcanza a mostrar datos de la cuenta anterior.
+---
+ .../auth/presentation/provider/login_provider.dart         | 5 +++++
+ .../data/repositories/local_storage_service_impl.dart      | 7 +++++++
+ lib/features/onboarding/domain/local_storage_service.dart  | 6 ++++++
+ 3 files changed, 18 insertions(+)
+
+diff --git a/lib/features/auth/presentation/provider/login_provider.dart b/lib/features/auth/presentation/provider/login_provider.dart
+index 8445095..eb55558 100644
+--- a/lib/features/auth/presentation/provider/login_provider.dart
++++ b/lib/features/auth/presentation/provider/login_provider.dart
+@@ -1,6 +1,7 @@
+ import 'package:flutter/foundation.dart';
+ 
+ import '../../../../core/session/session_service.dart';
++import '../../../onboarding/data/repositories/local_storage_service_impl.dart';
+ import '../../domain/auth_repository.dart';
+ import '../../domain/entities/auth_response.dart';
+ 
+@@ -40,6 +41,10 @@ class LoginProvider extends ChangeNotifier {
+         password: password,
+       );
+ 
++      // Limpia cualquier nombre/correo que haya quedado guardado en este
++      // dispositivo de una sesión anterior — antes de guardar el nuevo
++      // token, para que nunca se alcance a mostrar el dato de otra cuenta.
++      await LocalStorageServiceImpl().clearUserData();
+       await SessionService().saveToken(_authResponse!.accessToken);
+       _status       = LoginStatus.success;
+       _errorMessage = null;
+diff --git a/lib/features/onboarding/data/repositories/local_storage_service_impl.dart b/lib/features/onboarding/data/repositories/local_storage_service_impl.dart
+index e71aca5..bf0cf11 100644
+--- a/lib/features/onboarding/data/repositories/local_storage_service_impl.dart
++++ b/lib/features/onboarding/data/repositories/local_storage_service_impl.dart
+@@ -50,4 +50,11 @@ class LocalStorageServiceImpl implements LocalStorageService {
+     final prefs = await SharedPreferences.getInstance();
+     return prefs.getString(_keyUserName);
+   }
++
++  @override
++  Future<void> clearUserData() async {
++    final prefs = await SharedPreferences.getInstance();
++    await prefs.remove(_keyUserName);
++    await prefs.remove(_keyUserEmail);
++  }
+ }
+\ No newline at end of file
+diff --git a/lib/features/onboarding/domain/local_storage_service.dart b/lib/features/onboarding/domain/local_storage_service.dart
+index 2319d3f..baef166 100644
+--- a/lib/features/onboarding/domain/local_storage_service.dart
++++ b/lib/features/onboarding/domain/local_storage_service.dart
+@@ -12,6 +12,12 @@ abstract interface class LocalStorageService {
+   Future<void> setUserName({required String value});
+   Future<String?> getUserName();
+ 
++  // Limpia SOLO nombre/correo cacheados (usar en cada login exitoso, para
++  // que la sesión nueva nunca arranque mostrando datos de la cuenta
++  // anterior que haya usado este dispositivo). No toca el flag de
++  // onboarding.
++  Future<void> clearUserData();
++
+   // Limpia todo el storage (útil para logout / remote wipe).
+   Future<void> clearAll();
+ }
+\ No newline at end of file
+-- 
+2.43.0
+

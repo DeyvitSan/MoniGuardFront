@@ -1,0 +1,228 @@
+From aee819b124e444dfc4ce6829369ce48b703b475c Mon Sep 17 00:00:00 2001
+From: "Claude (Jou's assistant)" <noreply@anthropic.com>
+Date: Thu, 23 Jul 2026 19:37:28 +0000
+Subject: [PATCH] feat: vista de datos registrados en Perfil (nombre, correo,
+ hash, parcela) + fix PATCH
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- ApiConstants: profileMe y profileUpdate ahora apuntan al mismo
+  endpoint unificado /api/v1/profile/me (antes profileUpdate apuntaba
+  a /profile/update, ruta que nunca existió en el backend).
+- ProfileUser: se agregan passwordHash y parcelaNombre.
+- ProfileRepositoryImpl.updateName: cambia de PUT a PATCH (coincide
+  con el endpoint nuevo del gateway, que es una actualización parcial).
+- ProfileProvider: expone passwordHash y parcelaNombre.
+- ProfilePage: nueva tarjeta 'Datos registrados' con nombre, correo,
+  hash de contraseña y nombre de parcela.
+---
+ lib/core/constants/api_constants.dart         |  2 +-
+ .../repositories/profile_repository_impl.dart |  2 +-
+ .../profile/domain/entities/profile_user.dart | 13 +++-
+ .../presentation/pages/profile_page.dart      | 75 +++++++++++++++++++
+ .../provider/profile_provider.dart            | 10 +++
+ 5 files changed, 99 insertions(+), 3 deletions(-)
+
+diff --git a/lib/core/constants/api_constants.dart b/lib/core/constants/api_constants.dart
+index fac03df..b92683d 100644
+--- a/lib/core/constants/api_constants.dart
++++ b/lib/core/constants/api_constants.dart
+@@ -12,7 +12,7 @@ abstract final class ApiConstants {
+   static const String login    = '$baseUrl/auth/login';
+   static const String register = '$baseUrl/auth/register';
+   static const String profileMe = '$baseUrl/profile/me';
+-  static const String profileUpdate = '$baseUrl/profile/update';
++  static const String profileUpdate = '$baseUrl/profile/me';
+   static const String openMeteoBaseUrl = 'https://api.open-meteo.com/v1/forecast';
+   static const String bitacoras = '$baseUrl/bitacoras';
+   static const String parcelas = '$baseUrl/parcelas';
+diff --git a/lib/features/profile/data/repositories/profile_repository_impl.dart b/lib/features/profile/data/repositories/profile_repository_impl.dart
+index ef6ee99..1a69dfa 100644
+--- a/lib/features/profile/data/repositories/profile_repository_impl.dart
++++ b/lib/features/profile/data/repositories/profile_repository_impl.dart
+@@ -66,7 +66,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
+ 
+     try {
+       final response = await _client
+-          .put(
++          .patch(
+             Uri.parse(ApiConstants.profileUpdate),
+             headers: {
+               'Content-Type': 'application/json',
+diff --git a/lib/features/profile/domain/entities/profile_user.dart b/lib/features/profile/domain/entities/profile_user.dart
+index b749389..42761a5 100644
+--- a/lib/features/profile/domain/entities/profile_user.dart
++++ b/lib/features/profile/domain/entities/profile_user.dart
+@@ -4,16 +4,27 @@ import 'package:flutter/foundation.dart';
+ class ProfileUser {
+   final String name;
+   final String email;
++  final String? passwordHash;
++  final String? parcelaNombre;
+ 
+-  const ProfileUser({required this.name, required this.email});
++  const ProfileUser({
++    required this.name,
++    required this.email,
++    this.passwordHash,
++    this.parcelaNombre,
++  });
+ 
+   factory ProfileUser.fromJson(Map<String, dynamic> json) => ProfileUser(
+         name: (json['nombre'] ?? json['name'] ?? '').toString(),
+         email: (json['email'] ?? '').toString(),
++        passwordHash: json['passwordHash']?.toString(),
++        parcelaNombre: json['parcelaNombre']?.toString(),
+       );
+ 
+   Map<String, dynamic> toJson() => {
+         'nombre': name,
+         'email': email,
++        'passwordHash': passwordHash,
++        'parcelaNombre': parcelaNombre,
+       };
+ }
+diff --git a/lib/features/profile/presentation/pages/profile_page.dart b/lib/features/profile/presentation/pages/profile_page.dart
+index bdd39c4..531f0fe 100644
+--- a/lib/features/profile/presentation/pages/profile_page.dart
++++ b/lib/features/profile/presentation/pages/profile_page.dart
+@@ -88,6 +88,79 @@ class _ProfilePageState extends State<ProfilePage> {
+     nameController.dispose();
+   }
+ 
++  Widget _buildDatosRegistrados(BuildContext context) {
++    final theme = Theme.of(context);
++
++    return Card(
++      margin: EdgeInsets.zero,
++      child: Padding(
++        padding: const EdgeInsets.all(16),
++        child: Column(
++          crossAxisAlignment: CrossAxisAlignment.start,
++          children: [
++            Text('Datos registrados', style: theme.textTheme.titleMedium),
++            const SizedBox(height: 12),
++            _buildDatoRow(context, Icons.badge_outlined, 'Nombre', controller.name),
++            const Divider(height: 20),
++            _buildDatoRow(context, Icons.email_outlined, 'Correo', controller.email),
++            const Divider(height: 20),
++            _buildDatoRow(
++              context,
++              Icons.lock_outline,
++              'Contraseña (hash)',
++              controller.passwordHash ?? 'No disponible',
++              monospace: true,
++            ),
++            const Divider(height: 20),
++            _buildDatoRow(
++              context,
++              Icons.landscape_outlined,
++              'Parcela',
++              controller.parcelaNombre ?? 'Sin parcela registrada',
++            ),
++          ],
++        ),
++      ),
++    );
++  }
++
++  Widget _buildDatoRow(
++    BuildContext context,
++    IconData icon,
++    String label,
++    String value, {
++    bool monospace = false,
++  }) {
++    final theme = Theme.of(context);
++    return Row(
++      crossAxisAlignment: CrossAxisAlignment.start,
++      children: [
++        Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
++        const SizedBox(width: 12),
++        Expanded(
++          child: Column(
++            crossAxisAlignment: CrossAxisAlignment.start,
++            children: [
++              Text(
++                label,
++                style: theme.textTheme.labelMedium?.copyWith(
++                  color: theme.colorScheme.onSurfaceVariant,
++                ),
++              ),
++              const SizedBox(height: 2),
++              Text(
++                value,
++                style: monospace
++                    ? theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')
++                    : theme.textTheme.bodyMedium,
++              ),
++            ],
++          ),
++        ),
++      ],
++    );
++  }
++
+   Widget _buildLoginPage() => LoginPage(
+         onLoginSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+           MaterialPageRoute(builder: (_) => const HomePage()),
+@@ -153,6 +226,8 @@ class _ProfilePageState extends State<ProfilePage> {
+                     textAlign: TextAlign.center,
+                   ),
+                 ],
++                const SizedBox(height: 28),
++                _buildDatosRegistrados(context),
+               ],
+               const SizedBox(height: 28),
+               SizedBox(
+diff --git a/lib/features/profile/presentation/provider/profile_provider.dart b/lib/features/profile/presentation/provider/profile_provider.dart
+index 56c0ec6..d4bb94b 100644
+--- a/lib/features/profile/presentation/provider/profile_provider.dart
++++ b/lib/features/profile/presentation/provider/profile_provider.dart
+@@ -20,11 +20,15 @@ class ProfileProvider extends ChangeNotifier {
+ 
+   String _name = 'Usuario';
+   String _email = 'Sin correo';
++  String? _passwordHash;
++  String? _parcelaNombre;
+   bool _isLoading = false;
+   String? _errorMessage;
+ 
+   String get name => _name;
+   String get email => _email;
++  String? get passwordHash => _passwordHash;
++  String? get parcelaNombre => _parcelaNombre;
+   bool get isLoading => _isLoading;
+   String? get errorMessage => _errorMessage;
+ 
+@@ -53,6 +57,8 @@ class ProfileProvider extends ChangeNotifier {
+       final profile = await _repository.getProfile();
+       _name = profile.name;
+       _email = profile.email;
++      _passwordHash = profile.passwordHash;
++      _parcelaNombre = profile.parcelaNombre;
+       await _storage.setUserName(value: _name);
+       await _storage.setUserEmail(email: _email);
+     } catch (e) {
+@@ -84,6 +90,8 @@ class ProfileProvider extends ChangeNotifier {
+       final updated = await _repository.updateName(name: trimmed);
+       _name = updated.name;
+       _email = updated.email;
++      _passwordHash = updated.passwordHash;
++      _parcelaNombre = updated.parcelaNombre;
+       return true;
+     } catch (e) {
+       _errorMessage = e.toString();
+@@ -103,6 +111,8 @@ class ProfileProvider extends ChangeNotifier {
+       await _storage.clearAll();
+       _name = 'Usuario';
+       _email = 'Sin correo';
++      _passwordHash = null;
++      _parcelaNombre = null;
+       _errorMessage = null;
+     } catch (e) {
+       debugPrint('profile logout error: $e');
+-- 
+2.43.0
+
