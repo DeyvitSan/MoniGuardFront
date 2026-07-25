@@ -31,12 +31,12 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final response = await _client
           .get(
-            Uri.parse(ApiConstants.profileMe),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Accept': 'application/json',
-            },
-          )
+        Uri.parse(ApiConstants.profileMe),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      )
           .timeout(ApiConstants.connectTimeout);
 
       if (response.statusCode == 200) {
@@ -66,15 +66,15 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
     try {
       final response = await _client
-          .put(
-            Uri.parse(ApiConstants.profileUpdate),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({'nombre': name}),
-          )
+          .patch(
+        Uri.parse(ApiConstants.profileUpdate),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({'nombre': name}),
+      )
           .timeout(ApiConstants.connectTimeout);
 
       if (response.statusCode == 200 || response.statusCode == 201) {

@@ -67,6 +67,15 @@ class ParcelaRepositoryImpl implements ParcelaRepository {
           statusCode: 401,
         );
       }
+      if (response.statusCode == 409) {
+        // El backend ya rechazó esto porque el usuario YA tiene una
+        // parcela — no es un error real desde el punto de vista del
+        // usuario, solo significa que puede pasar directo a Home.
+        throw ParcelaException(
+          message: 'Ya tienes una parcela registrada.',
+          statusCode: 409,
+        );
+      }
       throw ParcelaException(
         message: 'No se pudo crear la parcela. Intenta de nuevo.',
         statusCode: response.statusCode,
@@ -115,6 +124,19 @@ class ParcelaRepositoryImpl implements ParcelaRepository {
 
   @override
   Future<bool> tieneParcela() async {
+    try {
+      return await _tieneParcelaIntento();
+    } on ParcelaException catch (e) {
+      // Si fue por sesión expirada, no tiene caso reintentar.
+      if (e.statusCode == 401) rethrow;
+      // Un solo reintento — cubre el caso típico de un hiccup momentáneo
+      // (arranque en frío del backend, blip de red) sin duplicar la
+      // espera del usuario más de lo necesario.
+      return await _tieneParcelaIntento();
+    }
+  }
+
+  Future<bool> _tieneParcelaIntento() async {
     final token = await _requireToken();
 
     try {
@@ -130,9 +152,15 @@ class ParcelaRepositoryImpl implements ParcelaRepository {
         );
       }
       if (response.statusCode != 200) {
-        // Fallback conservador: si no podemos confirmar, asumimos que no
-        // tiene, para no dejarlo atorado sin poder crear su primera parcela.
-        return false;
+        // Antes esto asumía "no tiene parcela" ante CUALQUIER error, lo
+        // cual podía mandar a un usuario que SÍ tiene parcela de vuelta
+        // al formulario de creación (y, si insistía, terminaba con una
+        // segunda parcela). Ahora se distingue: solo un 200 confirma de
+        // verdad; cualquier otra cosa es "no sabemos", no "no tiene".
+        throw ParcelaException(
+          message: 'No se pudo confirmar tu parcela. Intenta de nuevo.',
+          statusCode: response.statusCode,
+        );
       }
 
       final body = jsonDecode(response.body) as Map<String, dynamic>;

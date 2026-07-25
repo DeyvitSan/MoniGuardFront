@@ -17,6 +17,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   late final ProfileProvider controller;
+  bool _hashVisible = false;
 
   @override
   void initState() {
@@ -88,93 +89,253 @@ class _ProfilePageState extends State<ProfilePage> {
     nameController.dispose();
   }
 
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Seguro que quieres cerrar tu sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    await controller.logout();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesión cerrada')));
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => _buildLoginPage()),
+          (route) => false,
+    );
+  }
+
+  // ── Header: avatar + nombre + correo ────────────────────────────────
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 44,
+          child: Text(
+            controller.initials,
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          controller.name,
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          controller.email,
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  // ── Encabezado de sección estilo "Ajustes" ──────────────────────────
+  Widget _sectionLabel(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+      child: Text(
+        text.toUpperCase(),
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.primary,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.6,
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionCard({required List<Widget> children}) {
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+
+  Widget _infoTile(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required String value,
+        bool monospace = false,
+        Widget? trailing,
+        VoidCallback? onTap,
+      }) {
+    final theme = Theme.of(context);
+    return ListTile(
+      onTap: onTap,
+      leading: CircleAvatar(
+        radius: 18,
+        backgroundColor: theme.colorScheme.secondaryContainer,
+        child: Icon(icon, size: 18, color: theme.colorScheme.onSecondaryContainer),
+      ),
+      title: Text(
+        label,
+        style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          value,
+          style: monospace
+              ? theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace')
+              : theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+      trailing: trailing,
+    );
+  }
+
+  Widget _buildCuentaSection(BuildContext context) {
+    return _sectionCard(children: [
+      _infoTile(
+        context,
+        icon: Icons.badge_outlined,
+        label: 'Nombre',
+        value: controller.name,
+        trailing: IconButton(
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          tooltip: 'Editar nombre',
+          onPressed: _showEditNameDialog,
+        ),
+      ),
+      const Divider(height: 1, indent: 68),
+      _infoTile(
+        context,
+        icon: Icons.email_outlined,
+        label: 'Correo',
+        value: controller.email,
+      ),
+    ]);
+  }
+
+  Widget _buildSeguridadSection(BuildContext context) {
+    final hash = controller.passwordHash;
+    final displayValue = hash == null
+        ? 'No disponible'
+        : (_hashVisible ? hash : '•' * 24);
+
+    return _sectionCard(children: [
+      _infoTile(
+        context,
+        icon: Icons.lock_outline,
+        label: 'Contraseña (hash almacenado)',
+        value: displayValue,
+        monospace: true,
+        trailing: hash == null
+            ? null
+            : IconButton(
+          icon: Icon(_hashVisible ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 20),
+          tooltip: _hashVisible ? 'Ocultar' : 'Mostrar',
+          onPressed: () => setState(() => _hashVisible = !_hashVisible),
+        ),
+      ),
+      if (hash != null)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(68, 0, 16, 14),
+          child: Text(
+            'Este es el hash cifrado, no tu contraseña real — no se puede revertir a texto plano.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+    ]);
+  }
+
+  Widget _buildParcelaSection(BuildContext context) {
+    return _sectionCard(children: [
+      _infoTile(
+        context,
+        icon: Icons.landscape_outlined,
+        label: 'Parcela',
+        value: controller.parcelaNombre ?? 'Sin parcela registrada',
+      ),
+    ]);
+  }
+
   Widget _buildLoginPage() => LoginPage(
-        onLoginSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomePage()),
+    onLoginSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomePage()),
           (route) => false,
-        ),
-        onGoToRegister: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => _buildRegisterPage()),
+    ),
+    onGoToRegister: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => _buildRegisterPage()),
           (route) => false,
-        ),
-      );
+    ),
+  );
 
   Widget _buildRegisterPage() => RegisterPage(
-        onRegisterSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => _buildLoginPage()),
+    onRegisterSuccess: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => _buildLoginPage()),
           (route) => false,
-        ),
-        onGoToLogin: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => _buildLoginPage()),
+    ),
+    onGoToLogin: (ctx) => Navigator.of(ctx).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => _buildLoginPage()),
           (route) => false,
-        ),
-      );
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
-    final content = Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 54,
-                child: Text(
-                  controller.initials,
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (controller.isLoading)
-                const CircularProgressIndicator()
-              else ...[
-                Text(
-                  controller.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  controller.email,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                if (controller.errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    controller.errorMessage!,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ],
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Cerrar sesión'),
-                  onPressed: () async {
-                    await controller.logout();
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sesión cerrada')));
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => _buildLoginPage()),
-                      (route) => false,
-                    );
-                  },
-                ),
-              ),
-            ],
+    final theme = Theme.of(context);
+
+    final content = controller.isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : ListView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+      children: [
+        _buildHeader(context),
+        if (controller.errorMessage != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            controller.errorMessage!,
+            style: TextStyle(color: theme.colorScheme.error),
+            textAlign: TextAlign.center,
+          ),
+        ],
+        _sectionLabel(context, 'Cuenta'),
+        _buildCuentaSection(context),
+        _sectionLabel(context, 'Seguridad'),
+        _buildSeguridadSection(context),
+        _sectionLabel(context, 'Parcela'),
+        _buildParcelaSection(context),
+        const SizedBox(height: 28),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+              side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.4)),
+            ),
+            icon: const Icon(Icons.logout),
+            label: const Text('Cerrar sesión'),
+            onPressed: _confirmLogout,
           ),
         ),
-      ),
+      ],
     );
 
     if (!widget.showAppBar) {
@@ -182,12 +343,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Perfil'),
-        actions: [
-          IconButton(onPressed: _showEditNameDialog, icon: const Icon(Icons.edit)),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Perfil')),
       body: SafeArea(child: content),
     );
   }

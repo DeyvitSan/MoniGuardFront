@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/parcela_repository.dart';
 
-enum ParcelaSetupStatus { idle, guardando, guardado, failure, unauthorized }
+enum ParcelaSetupStatus { idle, guardando, guardado, failure, unauthorized, yaExiste }
 
 class ParcelaProvider extends ChangeNotifier {
   final ParcelaRepository _repo;
@@ -42,6 +42,12 @@ class ParcelaProvider extends ChangeNotifier {
       return true;
 
     } on ParcelaException catch (e) {
+      if (e.statusCode == 409) {
+        // Ya tenía una parcela — no es una falla, solo puede continuar.
+        _status = ParcelaSetupStatus.yaExiste;
+        notifyListeners();
+        return true;
+      }
       _status = e.statusCode == 401
           ? ParcelaSetupStatus.unauthorized
           : ParcelaSetupStatus.failure;

@@ -20,11 +20,15 @@ class ProfileProvider extends ChangeNotifier {
 
   String _name = 'Usuario';
   String _email = 'Sin correo';
+  String? _passwordHash;
+  String? _parcelaNombre;
   bool _isLoading = false;
   String? _errorMessage;
 
   String get name => _name;
   String get email => _email;
+  String? get passwordHash => _passwordHash;
+  String? get parcelaNombre => _parcelaNombre;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
@@ -53,6 +57,8 @@ class ProfileProvider extends ChangeNotifier {
       final profile = await _repository.getProfile();
       _name = profile.name;
       _email = profile.email;
+      _passwordHash = profile.passwordHash;
+      _parcelaNombre = profile.parcelaNombre;
       await _storage.setUserName(value: _name);
       await _storage.setUserEmail(email: _email);
     } catch (e) {
@@ -84,6 +90,8 @@ class ProfileProvider extends ChangeNotifier {
       final updated = await _repository.updateName(name: trimmed);
       _name = updated.name;
       _email = updated.email;
+      _passwordHash = updated.passwordHash;
+      _parcelaNombre = updated.parcelaNombre;
       return true;
     } catch (e) {
       _errorMessage = e.toString();
@@ -103,6 +111,8 @@ class ProfileProvider extends ChangeNotifier {
       await _storage.clearAll();
       _name = 'Usuario';
       _email = 'Sin correo';
+      _passwordHash = null;
+      _parcelaNombre = null;
       _errorMessage = null;
     } catch (e) {
       debugPrint('profile logout error: $e');

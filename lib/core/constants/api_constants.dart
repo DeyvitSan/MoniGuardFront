@@ -5,7 +5,7 @@ abstract final class ApiConstants {
   // Así nunca queda un http:// hardcodeado en el binario que se distribuye.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://api.moniguard.app/api/v1',
+    defaultValue: 'https://api-gateway-uf1e.onrender.com/api/v1',
   );
 
   //Endpoints
