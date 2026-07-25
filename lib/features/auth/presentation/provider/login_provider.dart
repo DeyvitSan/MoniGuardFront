@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/session/session_service.dart';
+import '../../../onboarding/data/repositories/local_storage_service_impl.dart';
 import '../../domain/auth_repository.dart';
 import '../../domain/entities/auth_response.dart';
 
@@ -40,6 +41,10 @@ class LoginProvider extends ChangeNotifier {
         password: password,
       );
 
+      // Limpia cualquier nombre/correo que haya quedado guardado en este
+      // dispositivo de una sesión anterior — antes de guardar el nuevo
+      // token, para que nunca se alcance a mostrar el dato de otra cuenta.
+      await LocalStorageServiceImpl().clearUserData();
       await SessionService().saveToken(_authResponse!.accessToken);
       _status       = LoginStatus.success;
       _errorMessage = null;

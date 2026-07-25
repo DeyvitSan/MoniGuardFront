@@ -50,4 +50,11 @@ class LocalStorageServiceImpl implements LocalStorageService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyUserName);
   }
+
+  @override
+  Future<void> clearUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_keyUserName);
+    await prefs.remove(_keyUserEmail);
+  }
 }

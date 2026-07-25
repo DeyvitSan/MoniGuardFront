@@ -12,6 +12,12 @@ abstract interface class LocalStorageService {
   Future<void> setUserName({required String value});
   Future<String?> getUserName();
 
+  // Limpia SOLO nombre/correo cacheados (usar en cada login exitoso, para
+  // que la sesión nueva nunca arranque mostrando datos de la cuenta
+  // anterior que haya usado este dispositivo). No toca el flag de
+  // onboarding.
+  Future<void> clearUserData();
+
   // Limpia todo el storage (útil para logout / remote wipe).
   Future<void> clearAll();
 }
