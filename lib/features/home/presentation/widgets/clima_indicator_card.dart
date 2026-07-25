@@ -37,30 +37,46 @@ class ClimaIndicatorCard extends StatelessWidget {
               child: Icon(icon, color: accentColor, size: 20),
             ),
             const SizedBox(height: 12),
-            Text(label,
-                style: tt.labelMedium?.copyWith(
-                    color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+            SizedBox(
+              height: 16,
+              width: double.infinity,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  style: tt.labelMedium?.copyWith(
+                      color: cs.onSurfaceVariant, letterSpacing: 0.5),
+                ),
+              ),
+            ),
             const SizedBox(height: 4),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: value,
-                    style: AppTypography.playfair(
-                      size: 28,
-                      weight: FontWeight.w700,
-                      color: cs.onSurface,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: RichText(
+                maxLines: 1,
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: value,
+                      style: AppTypography.playfair(
+                        size: 28,
+                        weight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: ' $unit',
-                    style: AppTypography.urbanist(
-                      size: 13,
-                      weight: FontWeight.w500,
-                      color: cs.onSurfaceVariant,
+                    TextSpan(
+                      text: ' $unit',
+                      style: AppTypography.urbanist(
+                        size: 13,
+                        weight: FontWeight.w500,
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

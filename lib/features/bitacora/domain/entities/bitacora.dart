@@ -40,6 +40,8 @@ class Bitacora {
   final double?          precipitacion;
   final DateTime?        fechaObservacion;
   final EstadoMazorca?   estadoMazorca;
+  final String?          analisisTextoEtiqueta;
+  final double?          analisisTextoConfianza;
   final bool             sincronizada;
   final DateTime         creadaEn;
 
@@ -54,6 +56,8 @@ class Bitacora {
     this.precipitacion,
     this.fechaObservacion,
     this.estadoMazorca,
+    this.analisisTextoEtiqueta,
+    this.analisisTextoConfianza,
     this.sincronizada = false,
     required this.creadaEn,
   });
@@ -83,6 +87,8 @@ class Bitacora {
         ? DateTime.parse(j['fechaObservacion'] as String)
         : null,
     estadoMazorca:    EstadoMazorca.fromBackend(j['estadoMazorca'] as String?),
+    analisisTextoEtiqueta:  j['analisisTextoEtiqueta'] as String?,
+    analisisTextoConfianza: (j['analisisTextoConfianza'] as num?)?.toDouble(),
     sincronizada:     j['sincronizada'] as bool? ?? true,
     creadaEn:         DateTime.parse(j['creadaEn'] as String? ?? j['creada_en'] as String),
   );

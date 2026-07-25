@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../../../bitacora/presentation/pages/bitacora_detail_page.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -154,7 +155,7 @@ class _AnalisisView extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.2)),
           const SizedBox(height: 12),
-          const _BitacorasRecientesSection(),
+          _BitacorasRecientesSection(summary: summary),
         ],
       ],
     );
@@ -570,7 +571,8 @@ class _AnalisisView extends StatelessWidget {
 }
 
 class _BitacorasRecientesSection extends StatefulWidget {
-  const _BitacorasRecientesSection();
+  final DashboardSummary summary;
+  const _BitacorasRecientesSection({required this.summary});
 
   @override
   State<_BitacorasRecientesSection> createState() => _BitacorasRecientesSectionState();
@@ -626,6 +628,14 @@ class _BitacorasRecientesSectionState extends State<_BitacorasRecientesSection> 
       children: _bitacoras!.map((b) => Card(
         shape: AppShapes.cardShape,
         child: ListTile(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => BitacoraDetailPage(
+                bitacora: b,
+                contextoActual: widget.summary,
+              ),
+            ),
+          ),
           leading: Icon(Icons.edit_note_rounded, color: cs.secondary),
           title: Text(b.estadoMazorca?.label ?? 'Sin estado'),
           subtitle: Text(
@@ -633,10 +643,8 @@ class _BitacorasRecientesSectionState extends State<_BitacorasRecientesSection> 
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: Text(
-            '${b.creadaEn.day}/${b.creadaEn.month}',
-            style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-          ),
+          trailing: Icon(Icons.chevron_right_rounded,
+              color: cs.onSurfaceVariant),
         ),
       )).toList(),
     );

@@ -9,8 +9,12 @@ import 'package:provider/provider.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../analisis/presentation/pages/analisis_page.dart';
+import '../../../bitacora/domain/bitacora_repository.dart';
+import '../../../bitacora/domain/entities/bitacora.dart';
+import '../../../bitacora/presentation/pages/bitacora_detail_page.dart';
 import '../../../bitacora/presentation/pages/bitacora_page.dart';
 import '../../../profile/presentation/pages/profile_page.dart';
+import '../../domain/entities/dashboard_summary.dart';
 import '../provider/home_provider.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/clima_indicator_card.dart';
@@ -128,6 +132,63 @@ class _HomeView extends StatelessWidget {
 }
 
 // TAB 0 — Dashboard principal
+Future<void> _abrirUltimaBitacora(BuildContext context, DashboardSummary summary) {
+  return Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => _UltimaBitacoraLoaderPage(summary: summary),
+    ),
+  );
+}
+
+class _UltimaBitacoraLoaderPage extends StatefulWidget {
+  final DashboardSummary summary;
+  const _UltimaBitacoraLoaderPage({required this.summary});
+
+  @override
+  State<_UltimaBitacoraLoaderPage> createState() => _UltimaBitacoraLoaderPageState();
+}
+
+class _UltimaBitacoraLoaderPageState extends State<_UltimaBitacoraLoaderPage> {
+  late Future<List<Bitacora>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = getIt<BitacoraRepository>().listarRemotas();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Bitacora>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Detalle de bitácora')),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError || snapshot.data == null || snapshot.data!.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Detalle de bitácora')),
+            body: Center(
+              child: Text(
+                'No se pudo cargar la última bitácora.',
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            ),
+          );
+        }
+        // El backend ya devuelve ordenado por fecha descendente.
+        return BitacoraDetailPage(
+          bitacora: snapshot.data!.first,
+          contextoActual: widget.summary,
+        );
+      },
+    );
+  }
+}
+
 class _DashboardTab extends StatelessWidget {
   final HomeProvider ctrl;
   const _DashboardTab({required this.ctrl});
@@ -151,6 +212,7 @@ class _DashboardTab extends StatelessWidget {
           ),
           DashboardStatus.success => _DashboardContent(
             summary: ctrl.summary!,
+            nombreUsuario: ctrl.nombreUsuario,
           ),
         },
       ),
@@ -160,7 +222,8 @@ class _DashboardTab extends StatelessWidget {
 
 class _DashboardContent extends StatelessWidget {
   final dynamic summary;
-  const _DashboardContent({required this.summary});
+  final String? nombreUsuario;
+  const _DashboardContent({required this.summary, this.nombreUsuario});
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +237,7 @@ class _DashboardContent extends StatelessWidget {
           nombreParcela:  summary.parcela.nombre,
           ubicacion:      summary.parcela.ubicacion,
           alertasActivas: summary.alertasActivas,
+          nombreUsuario:  nombreUsuario,
         ),
         const SizedBox(height: 28),
 
@@ -222,7 +286,12 @@ class _DashboardContent extends StatelessWidget {
 
         _SectionLabel(label: 'REGISTRO DE CAMPO', textTheme: tt, colorScheme: cs),
         const SizedBox(height: 12),
-        UltimaBitacoraCard(fecha: summary.ultimaBitacora),
+        UltimaBitacoraCard(
+          fecha: summary.ultimaBitacora,
+          onTap: summary.ultimaBitacora == null
+              ? null
+              : () => _abrirUltimaBitacora(context, summary),
+        ),
 
         const SizedBox(height: 20),
         Center(

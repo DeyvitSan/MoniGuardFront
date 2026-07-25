@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 class UltimaBitacoraCard extends StatelessWidget {
   final DateTime? fecha;
+  final VoidCallback? onTap;
 
-  const UltimaBitacoraCard({super.key, this.fecha});
+  const UltimaBitacoraCard({super.key, this.fecha, this.onTap});
 
   String get _fechaTexto {
     if (fecha == null) return 'Sin registros';
@@ -36,7 +37,7 @@ class UltimaBitacoraCard extends StatelessWidget {
             style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
         trailing: Icon(Icons.chevron_right_rounded,
             color: cs.onSurfaceVariant),
-        onTap: () {/* TODO: navegar a Bitácoras */},
+        onTap: onTap,
       ),
     );
   }

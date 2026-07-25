@@ -5,13 +5,22 @@ class DashboardHeader extends StatelessWidget {
   final String nombreParcela;
   final String ubicacion;
   final int    alertasActivas;
+  final String? nombreUsuario;
 
   const DashboardHeader({
     super.key,
     required this.nombreParcela,
     required this.ubicacion,
     required this.alertasActivas,
+    this.nombreUsuario,
   });
+
+  String get _saludo {
+    final hora = DateTime.now().hour;
+    final momento = hora < 12 ? 'Buenos días' : (hora < 19 ? 'Buenas tardes' : 'Buenas noches');
+    final nombre = nombreUsuario;
+    return (nombre != null && nombre.isNotEmpty) ? '$momento, $nombre' : momento;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +33,7 @@ class DashboardHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Buenos días 🌱',
+              Text(_saludo,
                   style: tt.bodyMedium?.copyWith(
                       color: cs.onSurfaceVariant)),
               const SizedBox(height: 4),
